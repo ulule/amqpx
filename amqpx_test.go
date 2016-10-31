@@ -2,7 +2,7 @@ package amqpx
 
 import "github.com/streadway/amqp"
 
-func NewChannelPoolExample() {
+func ExampleNewChannelPool() {
 	uri := "amqp://..."
 
 	dialer := func() (*amqp.Connection, error) {
