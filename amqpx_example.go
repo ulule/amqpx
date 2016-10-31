@@ -20,6 +20,6 @@ func NewChannelPoolExample() {
 		panic(err)
 	}
 
-	// connection.Channel()
+	connection.Channel()
 	// ...
 }

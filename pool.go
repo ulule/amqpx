@@ -14,7 +14,7 @@ type Dialer func() (*amqp.Connection, error)
 type Pooler interface {
 	// Get returns an amqp connection from the pool
 	// Closing this connection puts it back to the pool
-	Get() (*amqp.Connection, error)
+	Get() (Connector, error)
 
 	// Close closes the pool and all its connections
 	// A closed pool cannot be used again
@@ -113,18 +113,9 @@ func (c *channelPool) putBack(connection *amqp.Connection) error {
 	}
 }
 
-// wrap wraps a standard amqp.Connection to a PoolConnection
-// allow us to override the amqp.Connection.Close method
-// instead of closing it we put it back to channelPool using the putBack method
-func (c *channelPool) wrap(connection *amqp.Connection) *amqp.Connection {
-	p := &PoolConnection{pool: c}
-	p.Connection = connection
-	return p
-}
-
 // Get returns a connection from the channelPool connections channel
 // if no connection are avaible, creates a new one calling our dialer
-func (c *channelPool) Get() (*amqp.Connection, error) {
+func (c *channelPool) Get() (Connector, error) {
 	if c.connections == nil {
 		return nil, ErrChannelPoolAlreadyClosed
 	}
@@ -134,14 +125,14 @@ func (c *channelPool) Get() (*amqp.Connection, error) {
 
 	select {
 	case connection := <-c.connections:
-		return c.wrap(connection), nil
+		return NewPoolConnection(c, connection), nil
 	default:
 		connection, err := c.dialer()
 		if err != nil {
 			return nil, err
 		}
 
-		return c.wrap(connection), nil
+		return NewPoolConnection(c, connection), nil
 	}
 }
 
