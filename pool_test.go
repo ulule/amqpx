@@ -58,6 +58,17 @@ func TestChannelPool_Get(t *testing.T) {
 	if pool.Length() != 0 {
 		t.Errorf("Invalid pool length after fill, expected '%d', got '%d'", 0, pool.Length())
 	}
+
+	// try to get a new connection even if pool is empty
+	connection, err = pool.Get()
+	if err != nil {
+		t.Errorf("Getting a connection from an empty pool should not return an error, got '%s'", err)
+	}
+
+	err = connection.Close()
+	if err != nil {
+		t.Errorf("Closing a non pool connection should not return an error, got '%s'", err)
+	}
 }
 
 func TestChannelPool_Close(t *testing.T) {
