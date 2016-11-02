@@ -19,6 +19,9 @@ type Pooler interface {
 	// Close closes the pool and all its connections
 	// A closed pool cannot be used again
 	Close() error
+
+	// Length counts open connections
+	Length() int
 }
 
 // channelPool implements the Pooler interface using a channel and a mutex
@@ -145,11 +148,15 @@ func (c *channelPool) Close() error {
 	c.mu.Lock()
 	defer c.mu.Unlock()
 
+	close(c.connections)
 	for connection := range c.connections {
 		connection.Close()
 	}
-	close(c.connections)
 	c.connections = nil
 
 	return nil
+}
+
+func (c *channelPool) Length() int {
+	return len(c.connections)
 }
