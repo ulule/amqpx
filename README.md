@@ -2,6 +2,10 @@
 
 An extension for Go AMQP library
 
+Currently supports:
+
+* Pooling
+
 # Installation
 
 ```
