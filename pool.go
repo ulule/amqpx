@@ -35,11 +35,13 @@ type channelPool struct {
 	capacity    int
 }
 
-// channelPoolOption is a function modifying a channelPool configuration
-type channelPoolOption func(*channelPool) error
+// ChannelPoolOption is a function modifying a channelPool configuration
+type ChannelPoolOption func(*channelPool) error
 
 const (
-	DefaultConnectionsLength   = 10
+	// DefaultConnectionsLength is default connections channel length
+	DefaultConnectionsLength = 10
+	// DefaultConnectionsCapacity is default connections channel capacity
 	DefaultConnectionsCapacity = 20
 )
 
@@ -52,7 +54,7 @@ var (
 )
 
 // Bounds set our channelPool connections channel length and capacity
-func Bounds(length, capacity int) channelPoolOption {
+func Bounds(length, capacity int) ChannelPoolOption {
 	return func(c *channelPool) error {
 		if length < 0 || capacity < length {
 			return ErrInvalidChannelPoolBounds
@@ -67,7 +69,7 @@ func Bounds(length, capacity int) channelPoolOption {
 
 // NewChannelPool returns a new channelPool
 // it calls our dialer and fill the connections channel until bounds are met
-func NewChannelPool(dialer Dialer, options ...channelPoolOption) (Pooler, error) {
+func NewChannelPool(dialer Dialer, options ...ChannelPoolOption) (Pooler, error) {
 	// default channelPool
 	pool := &channelPool{
 		dialer:   dialer,
@@ -157,6 +159,7 @@ func (c *channelPool) Close() error {
 	return nil
 }
 
+// Length returns connections channel length
 func (c *channelPool) Length() int {
 	return len(c.connections)
 }

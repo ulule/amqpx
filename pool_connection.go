@@ -11,7 +11,7 @@ type Connector interface {
 	Close() error
 }
 
-// PoolConnnection wrap an amqp.Connection
+// PoolConnection wrap an amqp.Connection
 // It implements the Connector interface
 // At close, it puts back its connection to its pool
 type PoolConnection struct {

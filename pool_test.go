@@ -7,12 +7,12 @@ import (
 )
 
 var (
-	brokerUri = "amqp://guest:guest@127.0.0.1:5672/"
+	brokerURI = "amqp://guest:guest@127.0.0.1:5672/"
 )
 
 func newChannelPool() (Pooler, error) {
 	dialer := func() (*amqp.Connection, error) {
-		return amqp.Dial(brokerUri)
+		return amqp.Dial(brokerURI)
 	}
 
 	return NewChannelPool(dialer)
