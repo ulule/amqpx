@@ -2,6 +2,10 @@ machine:
   services:
     - rabbitmq-server
 
+dependencies:
+  post:
+    - go get -u github.com/golang/lint/golint
+
 test:
   override:
     - golint ./...
