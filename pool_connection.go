@@ -34,5 +34,5 @@ func (p *PoolConnection) Channel() (*amqp.Channel, error) {
 
 // Close puts back the connection to the channelPool connections channel
 func (p *PoolConnection) Close() error {
-	return p.pool.putBack(p.connection)
+	return p.pool.release(p.connection)
 }
