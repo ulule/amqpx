@@ -1,0 +1,9 @@
+#!/bin/bash
+
+SOURCE_DIRECTORY=$(dirname "${BASH_SOURCE[0]}")
+cd "${SOURCE_DIRECTORY}/.."
+
+scripts/rabbitmq --start
+sleep 5
+go test -v -race .
+scripts/rabbitmq --stop
