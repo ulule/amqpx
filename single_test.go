@@ -25,5 +25,9 @@ func TestSinglePool_Get(t *testing.T) {
 	if err != nil {
 		t.Error(err)
 	}
-	connection.Close()
+
+	err = connection.Close()
+	if err != nil {
+		t.Errorf("Closing a connection should not return an error, got '%s'", err)
+	}
 }
