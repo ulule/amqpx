@@ -133,38 +133,28 @@ func TestChannelPool_Capacity(t *testing.T) {
 
 	scenario := []struct {
 		capacity int
-		hasError bool
+		err      error
 	}{
-		{1, false},
-		{2, false},
-		{30, false},
-		{255, false},
-		{0, true},
-		{-6, true},
-		{-700, true},
+		{1, nil},
+		{2, nil},
+		{30, nil},
+		{255, nil},
+		{0, ErrInvalidChannelCapacity},
+		{-6, ErrInvalidChannelCapacity},
+		{-700, ErrInvalidChannelCapacity},
 	}
 
 	for _, tt := range scenario {
 
 		p, err := newChannelPool(Capacity(tt.capacity))
 
-		if tt.hasError {
-			if err != ErrInvalidChannelCapacity {
-				t.Fatalf("unexpected error for %d: %s", tt.capacity, err)
-			}
-			if p != nil {
-				t.Fatalf("channel pool was expected to be nil for %d", tt.capacity)
-			}
-			continue
+		if err != tt.err {
+			t.Errorf("unexpected error for %d: %s", tt.capacity, err)
 		}
 
-		if err != nil {
-			t.Fatalf("unexpected error for %d: %s", tt.capacity, err)
+		if tt.err == nil && p == nil {
+			t.Errorf("channel pool was expected for %d", tt.capacity)
 		}
-		if p == nil {
-			t.Fatalf("channel pool was expected for %d", tt.capacity)
-		}
-
 	}
 
 }
