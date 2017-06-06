@@ -69,7 +69,6 @@ func Capacity(capacity int) ChannelPoolOption {
 // NewChannelPool returns a new channelPool
 // it calls our dialer and fill the connections channel until bounds are met
 func NewChannelPool(dialer Dialer, options ...ChannelPoolOption) (Pooler, error) {
-
 	// Default channel pool.
 	pool := &channelPool{
 		dialer:   dialer,
@@ -104,7 +103,6 @@ func NewChannelPool(dialer Dialer, options ...ChannelPoolOption) (Pooler, error)
 
 // release puts back a connection to our pool
 func (c *channelPool) release(connection *amqp.Connection) error {
-
 	c.mutex.RLock()
 	defer c.mutex.RUnlock()
 
@@ -121,7 +119,6 @@ func (c *channelPool) release(connection *amqp.Connection) error {
 // Get returns a connection from the pool.
 // However, if no connection are avaible, it will block.
 func (c *channelPool) Get() (Connector, error) {
-
 	connection, ok := <-c.connections
 	if !ok {
 		return nil, ErrChannelPoolClosed
@@ -139,7 +136,6 @@ func (c *channelPool) IsClosed() bool {
 
 // Close will closes all remaining connections and marks it as closed.
 func (c *channelPool) Close() error {
-
 	c.mutex.Lock()
 	defer c.mutex.Unlock()
 
@@ -161,6 +157,7 @@ func (c *channelPool) close(connection io.Closer) {
 	err := connection.Close()
 	if err != nil {
 		// TODO Log/Capture me, but must to be silent.
+		_ = err
 	}
 }
 

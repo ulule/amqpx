@@ -9,7 +9,6 @@ import (
 )
 
 func TestChannelPool_Get(t *testing.T) {
-
 	pool, err := newChannelPool()
 	if err != nil {
 		t.Error(err)
@@ -60,7 +59,6 @@ func TestChannelPool_Get(t *testing.T) {
 }
 
 func TestChannelPool_Close(t *testing.T) {
-
 	p, err := newChannelPool()
 	if err != nil {
 		t.Error(err)
@@ -86,7 +84,6 @@ func TestChannelPool_Close(t *testing.T) {
 }
 
 func TestChannelPool_ConcurrentAccess(t *testing.T) {
-
 	wg := &sync.WaitGroup{}
 
 	pool, err := newChannelPool(Capacity(5))
@@ -130,7 +127,6 @@ func TestChannelPool_ConcurrentAccess(t *testing.T) {
 }
 
 func TestChannelPool_Capacity(t *testing.T) {
-
 	scenario := []struct {
 		capacity int
 		err      error
