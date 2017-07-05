@@ -9,8 +9,8 @@ func ExampleNewChannelPool() {
 		return amqp.Dial(uri)
 	}
 
-	// pool will contain 20 amqp connections
-	pool, err := NewChannelPool(dialer, Bounds(20, 40))
+	// pool will contain 40 amqp connections
+	pool, err := NewChannelPool(dialer, Capacity(40))
 	if err != nil {
 		panic(err)
 	}
@@ -20,6 +20,11 @@ func ExampleNewChannelPool() {
 		panic(err)
 	}
 
-	connection.Channel()
+	channel, err := connection.Channel()
+	if err != nil {
+		panic(err)
+	}
+
+	_ = channel
 	// ...
 }
