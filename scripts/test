@@ -3,7 +3,14 @@
 SOURCE_DIRECTORY=$(dirname "${BASH_SOURCE[0]}")
 cd "${SOURCE_DIRECTORY}/.."
 
+go get -d -u github.com/stretchr/testify/require
+
+OPTIONS=""
+if [ -n "$1" ]; then
+    OPTIONS="$@"
+fi
+
 scripts/rabbitmq --start
 sleep 5
-go test -v -race .
+go test -v -race ${OPTIONS}
 scripts/rabbitmq --stop
