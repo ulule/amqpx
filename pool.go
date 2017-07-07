@@ -1,167 +1,220 @@
 package amqpx
 
 import (
-	"errors"
+	"fmt"
 	"io"
+	"math/rand"
 	"sync"
+	"time"
 
+	"github.com/pkg/errors"
 	"github.com/streadway/amqp"
 )
 
-// Dialer is a function returning an amqp connection
-type Dialer func() (*amqp.Connection, error)
-
-// Pooler interface describe a pool implementation
-type Pooler interface {
-
-	// Get returns an amqp connection from the pool
-	// Closing this connection puts it back to the pool
-	Get() (Connector, error)
-
-	// Close closes the pool and all its connections
-	// A closed pool cannot be used again
-	Close() error
-
-	// Length counts open connections
-	Length() int
-}
-
-// channelPool implements the Pooler interface using a channel and a mutex
-type channelPool struct {
-	mutex sync.RWMutex
-
-	dialer Dialer
-
-	connections chan *amqp.Connection
-	capacity    int
-	closed      bool
-}
-
-// ChannelPoolOption is a function modifying a channelPool configuration
-type ChannelPoolOption func(*channelPool) error
-
 const (
-	// DefaultConnectionsCapacity is default connections channel capacity
-	DefaultConnectionsCapacity = 20
+	// DefaultConnectionsCapacity is default connections pool capacity.
+	DefaultConnectionsCapacity = 10
 )
 
 var (
-	// ErrInvalidChannelCapacity occurs when channel has an invalid capacity
-	ErrInvalidChannelCapacity = errors.New("invalid channel pool capacity")
-
-	// ErrChannelPoolClosed occurs when operating on a closed channel pool
-	ErrChannelPoolClosed = errors.New("channel pool already closed")
+	// ErrInvalidConnectionsPoolCapacity occurs when the defined connections pool's capacity is invalid .
+	ErrInvalidConnectionsPoolCapacity = fmt.Errorf("invalid connections pool capacity")
+	// ErrNoConnectionAvailable occurs when the connections pool's has no healthy connections.
+	ErrNoConnectionAvailable = fmt.Errorf("no connection available")
 )
 
-// Capacity define the capacity of connections channel
-func Capacity(capacity int) ChannelPoolOption {
-	return func(c *channelPool) error {
+// Pooler implements the Client interface using a connections pool.
+// It will reuse a healthy connection from pool when a channel is requested.
+type Pooler struct {
+	mutex sync.RWMutex
 
+	dialer   Dialer
+	observer Observer
+
+	connections []*amqp.Connection
+	closed      bool
+}
+
+// WithCapacity will configure a client with a connections pool and given capacity.
+func WithCapacity(capacity int) Option {
+	return option(func(options *clientOptions) error {
 		if capacity <= 0 {
-			return ErrInvalidChannelCapacity
+			return ErrInvalidConnectionsPoolCapacity
 		}
 
-		c.capacity = capacity
+		options.usePool = true
+		options.capacity = capacity
 		return nil
-	}
+	})
 }
 
-// NewChannelPool returns a new channelPool
-// it calls our dialer and fill the connections channel until bounds are met
-func NewChannelPool(dialer Dialer, options ...ChannelPoolOption) (Pooler, error) {
+// newConnectionsPool returns a new client which use a connections pool for amqp's channel.
+func newConnectionsPool(options *clientOptions) (Client, error) {
 	// Default channel pool.
-	pool := &channelPool{
-		dialer:   dialer,
-		capacity: DefaultConnectionsCapacity,
+	instance := &Pooler{
+		dialer:   options.dialer,
+		observer: options.observer,
 	}
 
-	// Applies options.
-	for _, option := range options {
-		err := option(pool)
+	// Create connections pool.
+	instance.connections = []*amqp.Connection{}
+
+	// Open and keep amqp connections.
+	for i := 0; i < options.capacity; i++ {
+		err := instance.newConnection()
 		if err != nil {
 			return nil, err
 		}
 	}
 
-	// Create connections chan from given options.
-	pool.connections = make(chan *amqp.Connection, pool.capacity)
-
-	// Open and store amqp connections.
-	for i := 0; i < pool.capacity; i++ {
-
-		connection, err := dialer()
-		if err != nil {
-			return nil, err
-		}
-
-		pool.connections <- connection
-
-	}
-
-	return pool, nil
+	return instance, nil
 }
 
-// release puts back a connection to our pool
-func (c *channelPool) release(connection *amqp.Connection) error {
-	c.mutex.RLock()
-	defer c.mutex.RUnlock()
+// newConnection add a new connection on the connections pool.
+func (e *Pooler) newConnection() error {
+	e.mutex.Lock()
+	defer e.mutex.Unlock()
 
-	// In case channel was closed but given connection is still active.
-	if c.closed {
-		c.close(connection)
-		return nil
+	idx := len(e.connections)
+	connection, err := e.dialer()
+	if err != nil {
+		return err
 	}
 
-	c.connections <- connection
+	e.connections = append(e.connections, connection)
+	e.listenOnCloseConnection(idx, connection)
+
 	return nil
 }
 
-// Get returns a connection from the pool.
-// However, if no connection are avaible, it will block.
-func (c *channelPool) Get() (Connector, error) {
-	connection, ok := <-c.connections
-	if !ok {
-		return nil, ErrChannelPoolClosed
+// releaseConnection remove a connection from the connections pool.
+func (e *Pooler) releaseConnection(idx int) {
+	e.mutex.Lock()
+	defer e.mutex.Unlock()
+	e.connections[idx] = nil
+}
+
+// listenOnCloseConnection will listen on a connection close event.
+// If a connection is closed, it will release it from the connections pool and will try to create a new one.
+func (e *Pooler) listenOnCloseConnection(idx int, connection *amqp.Connection) {
+	receiver := make(chan *amqp.Error)
+	connection.NotifyClose(receiver)
+
+	go func() {
+
+		err := <-receiver
+		if err != nil {
+			e.observer.OnClose(err)
+		}
+
+		e.releaseConnection(idx)
+		e.retryConnection(idx)
+
+	}()
+}
+
+// retryConnection will try to open a new connection, unless the client is closed.
+// If it succeed, it will add this connection on the connections pool.
+func (e *Pooler) retryConnection(idx int) {
+	for {
+
+		e.mutex.RLock()
+		closed := e.closed
+		e.mutex.RUnlock()
+
+		// If client is closed, cancel retry.
+		if closed {
+			return
+		}
+
+		// Try to open a new connection.
+		connection, err := e.dialer()
+		if err == nil {
+
+			e.mutex.Lock()
+			e.connections[idx] = connection
+			e.listenOnCloseConnection(idx, connection)
+			e.mutex.Unlock()
+
+			return
+		}
+
+		// Schedule a retry between 200ms and 1s.
+		retry := time.Duration((200 + rand.Intn(801))) * time.Millisecond
+		time.Sleep(retry)
+	}
+}
+
+// Channel returns a new Channel from our connections pool.
+func (e *Pooler) Channel() (*amqp.Channel, error) {
+	e.mutex.RLock()
+	capacity := len(e.connections)
+	offset := rand.Intn(capacity)
+	e.mutex.RUnlock()
+
+	for i := 0; i < capacity; i++ {
+
+		idx := (i + offset) % capacity
+
+		e.mutex.RLock()
+		connection := e.connections[idx]
+		closed := e.closed
+		e.mutex.RUnlock()
+
+		if closed {
+			return nil, errors.Wrap(ErrClientClosed, "amqpx: cannot open a new channel")
+		}
+
+		if connection != nil {
+			channel, err := connection.Channel()
+			if err == nil {
+				return channel, nil
+			}
+		}
 	}
 
-	return NewPoolConnection(c, connection), nil
+	return nil, errors.Wrap(ErrNoConnectionAvailable, "amqpx: cannot open a new channel")
 }
 
 // IsClosed returns if the pool is closed.
-func (c *channelPool) IsClosed() bool {
-	c.mutex.RLock()
-	defer c.mutex.RUnlock()
-	return c.closed
+func (e *Pooler) IsClosed() bool {
+	e.mutex.RLock()
+	defer e.mutex.RUnlock()
+	return e.closed
 }
 
 // Close will closes all remaining connections and marks it as closed.
-func (c *channelPool) Close() error {
-	c.mutex.Lock()
-	defer c.mutex.Unlock()
+func (e *Pooler) Close() error {
+	e.mutex.Lock()
+	defer e.mutex.Unlock()
 
 	// If pool is already closed, it's a no-op.
-	if c.closed {
+	if e.closed {
 		return nil
 	}
 
-	c.closed = true
-	close(c.connections)
-	for connection := range c.connections {
-		c.close(connection)
+	e.closed = true
+	for i := range e.connections {
+		e.close(e.connections[i])
 	}
 
 	return nil
 }
 
-func (c *channelPool) close(connection io.Closer) {
-	err := connection.Close()
-	if err != nil {
-		// TODO Log/Capture me, but must to be silent.
-		_ = err
-	}
+// Length returns connections pool capacity.
+func (e *Pooler) Length() int {
+	e.mutex.RLock()
+	defer e.mutex.RUnlock()
+	return len(e.connections)
 }
 
-// Length returns connections channel length
-func (c *channelPool) Length() int {
-	return len(c.connections)
+func (e *Pooler) close(connection io.Closer) {
+	if connection == nil {
+		return
+	}
+
+	err := connection.Close()
+	if err != nil {
+		e.observer.OnClose(err)
+	}
 }

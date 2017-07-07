@@ -1,29 +1,43 @@
 package amqpx
 
 import (
+	"io"
 	"sync"
 
 	"github.com/pkg/errors"
 	"github.com/streadway/amqp"
 )
 
-// A simple client.
-type simple struct {
-	mutex  sync.RWMutex
-	dialer Dialer
+// WithoutConnectionsPool will configure a client without a connections pool.
+func WithoutConnectionsPool() Option {
+	return option(func(options *clientOptions) error {
+		options.usePool = false
+		return nil
+	})
+}
+
+// Simple implements the Client interface without a connections pool.
+// It will create a new connection every time a channel is requested.
+type Simple struct {
+	mutex sync.RWMutex
+
+	dialer   Dialer
+	observer Observer
+
 	closed bool
 }
 
-func NewSimple(dialer Dialer) (Client, error) {
-	instance := &simple{
-		dialer: dialer,
+func newSimple(options *clientOptions) (Client, error) {
+	instance := &Simple{
+		dialer:   options.dialer,
+		observer: options.observer,
 	}
 
 	return instance, nil
 }
 
 // Channel returns a new amqp's channel from current client unless it's closed.
-func (e *simple) Channel() (*amqp.Channel, error) {
+func (e *Simple) Channel() (*amqp.Channel, error) {
 	e.mutex.RLock()
 	closed := e.closed
 	e.mutex.RUnlock()
@@ -34,16 +48,13 @@ func (e *simple) Channel() (*amqp.Channel, error) {
 
 	connection, err := e.dialer()
 	if err != nil {
-		return nil, errors.Wrap(err, "amqpx: cannot open a new connection")
+		return nil, errors.Wrap(err, "amqpx: cannot open a new channel")
 	}
 
 	channel, err := connection.Channel()
 	if err != nil {
-		if channel != nil {
-			// TODO Log/Capture me, but must be silent.
-			thr := channel.Close()
-			_ = thr
-		}
+		e.close(connection)
+		e.close(channel)
 		return nil, errors.Wrap(err, "amqpx: cannot open a new channel")
 	}
 
@@ -51,7 +62,7 @@ func (e *simple) Channel() (*amqp.Channel, error) {
 }
 
 // Close closes the client.
-func (e *simple) Close() error {
+func (e *Simple) Close() error {
 	e.mutex.Lock()
 	defer e.mutex.Unlock()
 	e.closed = true
@@ -59,8 +70,19 @@ func (e *simple) Close() error {
 }
 
 // IsClosed returns if the client is closed.
-func (e *simple) IsClosed() bool {
+func (e *Simple) IsClosed() bool {
 	e.mutex.RLock()
 	defer e.mutex.RUnlock()
 	return e.closed
+}
+
+func (e *Simple) close(connection io.Closer) {
+	if connection == nil {
+		return
+	}
+
+	err := connection.Close()
+	if err != nil {
+		e.observer.OnClose(err)
+	}
 }
