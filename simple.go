@@ -88,7 +88,7 @@ func (e *Simple) newConnection() error {
 
 	connection, err := e.dialer()
 	if err != nil {
-		return errors.Wrap(err, "amqpx: cannot open a new channel")
+		return errors.Wrap(err, "amqpx: cannot open a new connection")
 	}
 
 	e.connection = connection
