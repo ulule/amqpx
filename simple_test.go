@@ -64,7 +64,7 @@ func TestSimpleClient_ConcurrentAccess(t *testing.T) {
 		is.NoError(client.Close())
 	}()
 
-	for i := 0; i < 200; i++ {
+	for i := 0; i < 8000; i++ {
 		wg.Add(1)
 		go func() {
 

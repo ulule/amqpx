@@ -195,7 +195,9 @@ func (e *Pooler) Close() error {
 
 	e.closed = true
 	for i := range e.connections {
-		e.close(e.connections[i])
+		if e.connections[i] != nil {
+			e.close(e.connections[i])
+		}
 	}
 
 	return nil
@@ -209,10 +211,6 @@ func (e *Pooler) Length() int {
 }
 
 func (e *Pooler) close(connection io.Closer) {
-	if connection == nil {
-		return
-	}
-
 	err := connection.Close()
 	if err != nil {
 		e.observer.OnClose(err)
