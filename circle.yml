@@ -1,13 +1,13 @@
 machine:
   services:
-    - rabbitmq-server
+    - docker
 
 dependencies:
-  post:
-    - go get -u github.com/golang/lint/golint
+  override:
+    - pip install docker-compose==1.5.2
+    - docker-compose -f docker-compose.yml build
+    - docker-compose -f docker-compose.yml run -d rabbitmq
 
 test:
   override:
-    - golint ./...
-    - go vet ./...
-    - go test -v -race ./...
+    - docker-compose -f docker-compose.yml run test

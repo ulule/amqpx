@@ -2,7 +2,6 @@
 
 set -eo pipefail
 
-export RABBITMQ_ERLANG_COOKIE='FOOBAR'
 export RABBITMQ_DEFAULT_USER='guest'
 export RABBITMQ_DEFAULT_PASS='guest'
 
