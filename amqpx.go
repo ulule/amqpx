@@ -1,4 +1,4 @@
-// Package amqpx provides extentions for Go AMQP library.
+// Package amqpx provides extensions for Go AMQP library.
 //
 // It use https://github.com/streadway/amqp as dependency.
 package amqpx
