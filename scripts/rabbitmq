@@ -1,0 +1,51 @@
+#!/bin/bash
+
+set -eo pipefail
+
+export RABBITMQ_DEFAULT_USER='guest'
+export RABBITMQ_DEFAULT_PASS='guest'
+
+DOCKER_QUEUE_TCP_PORT=${DOCKER_QUEUE_TCP_PORT:-5672}
+DOCKER_QUEUE_HTTP_PORT=${DOCKER_QUEUE_HTTP_PORT:-15672}
+
+CONTAINER_NAME="amqpx-rabbitmq"
+CONTAINER_IMAGE="rabbitmq:3-management"
+
+do_start() {
+
+    if [[ -n "$(docker ps -a -q -f name="${CONTAINER_NAME}" 2> /dev/null)" ]]; then
+        echo "[rabbitmq] erase previous configuration"
+        docker stop "${CONTAINER_NAME}" >/dev/null 2>&1 || true
+        docker rm "${CONTAINER_NAME}" >/dev/null 2>&1 || true
+    fi
+
+    echo "[rabbitmq] update rabbitmq images"
+    docker pull ${CONTAINER_IMAGE}
+
+    echo "[rabbitmq] start new ${CONTAINER_NAME} container"
+    docker run --name "${CONTAINER_NAME}" \
+        -e RABBITMQ_DEFAULT_USER="${RABBITMQ_DEFAULT_USER}" \
+        -e RABBITMQ_DEFAULT_PASS="${RABBITMQ_DEFAULT_PASS}" \
+        -p ${DOCKER_QUEUE_TCP_PORT}:5672 \
+        -p ${DOCKER_QUEUE_HTTP_PORT}:15672 \
+        -d ${CONTAINER_IMAGE} >/dev/null
+
+}
+
+do_stop() {
+
+    echo "[rabbitmq] stop ${CONTAINER_NAME} container"
+    docker stop "${CONTAINER_NAME}" >/dev/null 2>&1 || true
+    docker rm "${CONTAINER_NAME}" >/dev/null 2>&1 || true
+
+}
+
+case "$1" in
+    --stop)
+        do_stop
+    ;;
+    --start | *)
+        do_start
+    ;;
+esac
+exit 0

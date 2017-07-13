@@ -1,35 +1,18 @@
-# AMQPX
-
-An extension for Go AMQP library.
-
-Currently supports:
-
- * Client with connection recovery.
- * Client with connections pool.
-
-## Installation
-
-```
-$ go get -u github.com/ulule/amqpx
-```
-
-## Usage
-
-```go
-package foobar
+package amqpx_test
 
 import (
 	"github.com/streadway/amqp"
 	"github.com/ulule/amqpx"
 )
 
-func main() {
-	uri := "amqp://guest:guest@127.0.0.1:5672/"
+func ExampleNew() {
+	uri := "amqp://..."
 
 	dialer := func() (*amqp.Connection, error) {
 		return amqp.Dial(uri)
 	}
 
+	// This client will contain 20 amqp connections.
 	client, err := amqpx.New(dialer, amqpx.WithCapacity(20))
 	if err != nil {
 		// Handle error...
@@ -41,6 +24,5 @@ func main() {
 	}
 
 	// ...
-
+	_ = channel
 }
-```

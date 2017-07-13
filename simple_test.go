@@ -11,28 +11,19 @@ import (
 	"github.com/ulule/amqpx"
 )
 
-func TestPoolerClient_Client(t *testing.T) {
+func TestSimpleClient_Client(t *testing.T) {
 	is := NewRunner(t)
 
-	client, err := NewClient(amqpx.WithCapacity(7))
+	client, err := NewClient(amqpx.WithoutConnectionsPool())
 	is.NoError(err)
 	is.NotNil(client)
-	is.IsType(&amqpx.Pooler{}, client)
-	pooler := client.(*amqpx.Pooler)
-	is.Equal(7, pooler.Length())
-
-	client, err = NewClient()
-	is.NoError(err)
-	is.NotNil(client)
-	is.IsType(&amqpx.Pooler{}, client)
-	pooler = client.(*amqpx.Pooler)
-	is.Equal(amqpx.DefaultConnectionsCapacity, pooler.Length())
+	is.IsType(&amqpx.Simple{}, client)
 }
 
-func TestPoolerClient_Channel(t *testing.T) {
+func TestSimpleClient_Channel(t *testing.T) {
 	is := NewRunner(t)
 
-	client, err := NewClient()
+	client, err := NewClient(amqpx.WithoutConnectionsPool())
 	is.NoError(err)
 	is.NotNil(client)
 	defer func() {
@@ -47,10 +38,10 @@ func TestPoolerClient_Channel(t *testing.T) {
 	is.NoError(err)
 }
 
-func TestPoolerClient_Close(t *testing.T) {
+func TestSimpleClient_Close(t *testing.T) {
 	is := NewRunner(t)
 
-	client, err := NewClient()
+	client, err := NewClient(amqpx.WithoutConnectionsPool())
 	is.NoError(err)
 	is.NotNil(client)
 	defer func() {
@@ -62,11 +53,11 @@ func TestPoolerClient_Close(t *testing.T) {
 	is.True(client.IsClosed())
 }
 
-func TestPoolerClient_ConcurrentAccess(t *testing.T) {
+func TestSimpleClient_ConcurrentAccess(t *testing.T) {
 	is := NewRunner(t)
 	wg := &sync.WaitGroup{}
 
-	client, err := NewClient()
+	client, err := NewClient(amqpx.WithoutConnectionsPool())
 	is.NoError(err)
 	is.NotNil(client)
 	defer func() {
