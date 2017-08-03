@@ -1,0 +1,28 @@
+#!/bin/bash
+
+set -eo pipefail
+
+hostname=`hostname`
+RABBITMQ_NODENAME=${RABBITMQ_NODENAME:-rabbit}
+
+if [ -z "$CLUSTER_WITH" -o "$CLUSTER_WITH" = "$hostname" ]; then
+
+  echo "[rabbitmq-cluster] start standalone server"
+  cp /etc/rabbitmq/rabbitmq-standalone.config /etc/rabbitmq/rabbitmq.config
+  /usr/lib/rabbitmq/bin/rabbitmq-server
+
+else
+
+  echo "[rabbitmq-cluster] start server in cluster mode"
+  cp /etc/rabbitmq/rabbitmq-cluster.config /etc/rabbitmq/rabbitmq.config
+  /usr/lib/rabbitmq/bin/rabbitmq-server -detached
+  /usr/lib/rabbitmq/bin/rabbitmqctl stop_app
+  /usr/lib/rabbitmq/bin/rabbitmqctl join_cluster ${ENABLE_RAM:+--ram} $RABBITMQ_NODENAME@$CLUSTER_WITH
+  /usr/lib/rabbitmq/bin/rabbitmqctl start_app
+
+  # Tail to keep the a foreground process active..
+  tail -f /var/log/*
+
+fi
+
+exit 0

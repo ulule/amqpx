@@ -2,33 +2,114 @@
 
 set -eo pipefail
 
-export RABBITMQ_DEFAULT_USER='guest'
-export RABBITMQ_DEFAULT_PASS='guest'
+SOURCE_DIRECTORY=$(dirname "${BASH_SOURCE[0]}")
+cd "${SOURCE_DIRECTORY}/.."
+
+ROOT_DIRECTORY=`pwd`
+DOCKER_CONF_DIRECTORY="${ROOT_DIRECTORY}/scripts/conf/rabbitmq"
 
 DOCKER_QUEUE_TCP_PORT=${DOCKER_QUEUE_TCP_PORT:-5672}
 DOCKER_QUEUE_HTTP_PORT=${DOCKER_QUEUE_HTTP_PORT:-15672}
 
 CONTAINER_NAME="amqpx-rabbitmq"
-CONTAINER_IMAGE="rabbitmq:3-management"
+CONTAINER_IMAGE="rabbitmq:3.6.10-amqpx"
+BASE_IMAGE="rabbitmq:3.6.10-management"
 
-do_start() {
+compose_docker_image() {
+    declare name="$1" path="$2"
 
-    if [[ -n "$(docker ps -a -q -f name="${CONTAINER_NAME}" 2> /dev/null)" ]]; then
+    echo "[rabbitmq] update docker base image"
+    docker pull "${BASE_IMAGE}" || true
+
+    echo "[rabbitmq] build docker image"
+    docker build -t "${name}" "${path}"
+
+}
+
+erase_previous_configuration() {
+    declare name="$1"
+
+    if [[ -n "$(docker ps -a -q -f name="${name}" 2> /dev/null)" ]]; then
         echo "[rabbitmq] erase previous configuration"
-        docker stop "${CONTAINER_NAME}" >/dev/null 2>&1 || true
-        docker rm "${CONTAINER_NAME}" >/dev/null 2>&1 || true
+        docker stop "${name}" >/dev/null 2>&1 || true
+        docker rm "${name}" >/dev/null 2>&1 || true
     fi
+}
 
-    echo "[rabbitmq] update rabbitmq images"
-    docker pull ${CONTAINER_IMAGE}
-
+start_rabbitmq_standalone_mode() {
     echo "[rabbitmq] start new ${CONTAINER_NAME} container"
     docker run --name "${CONTAINER_NAME}" \
-        -e RABBITMQ_DEFAULT_USER="${RABBITMQ_DEFAULT_USER}" \
-        -e RABBITMQ_DEFAULT_PASS="${RABBITMQ_DEFAULT_PASS}" \
         -p ${DOCKER_QUEUE_TCP_PORT}:5672 \
         -p ${DOCKER_QUEUE_HTTP_PORT}:15672 \
         -d ${CONTAINER_IMAGE} >/dev/null
+}
+
+start_rabbitmq_cluster_mode() {
+    echo "[rabbitmq] start new ${CONTAINER_NAME}-1 container"
+    docker run --name "${CONTAINER_NAME}-1" \
+        --hostname "${CONTAINER_NAME}-1" \
+        -e ERLANG_COOKIE=foobar \
+        -p 5672:5672 \
+        -p 15672:15672 \
+        -d ${CONTAINER_IMAGE} >/dev/null
+
+    echo "[rabbitmq] start new ${CONTAINER_NAME}-2 container"
+    docker run --name "${CONTAINER_NAME}-2" \
+        --hostname "${CONTAINER_NAME}-2" \
+        --link "${CONTAINER_NAME}-1" \
+        -e CLUSTER_WITH="${CONTAINER_NAME}-1" \
+        -e ENABLE_RAM=true \
+        -e RAM_NODE=true \
+        -e ERLANG_COOKIE=foobar \
+        -p 5673:5672 \
+        -p 15673:15672 \
+        -d ${CONTAINER_IMAGE} >/dev/null
+
+    echo "[rabbitmq] start new ${CONTAINER_NAME}-3 container"
+    docker run --name "${CONTAINER_NAME}-3" \
+        --hostname "${CONTAINER_NAME}-3" \
+        --link "${CONTAINER_NAME}-1" \
+        --link "${CONTAINER_NAME}-2" \
+        -e CLUSTER_WITH="${CONTAINER_NAME}-1" \
+        -e ERLANG_COOKIE=foobar \
+        -p 5674:5672 \
+        -p 15674:15672 \
+        -d ${CONTAINER_IMAGE} >/dev/null
+}
+
+bootstrap_standalone() {
+
+    erase_previous_configuration "${CONTAINER_NAME}"
+
+    compose_docker_image "${CONTAINER_IMAGE}" "${DOCKER_CONF_DIRECTORY}"
+
+    start_rabbitmq_standalone_mode
+
+}
+
+bootstrap_cluster() {
+
+    erase_previous_configuration "${CONTAINER_NAME}-1"
+    erase_previous_configuration "${CONTAINER_NAME}-2"
+    erase_previous_configuration "${CONTAINER_NAME}-3"
+
+    compose_docker_image "${CONTAINER_IMAGE}" "${DOCKER_CONF_DIRECTORY}"
+
+    start_rabbitmq_cluster_mode
+
+}
+
+
+do_start() {
+
+    case "$AMQPX_CLUSTER_MODE" in
+        y | Y | yes | true)
+            bootstrap_cluster
+        ;;
+        n | N | no| false | *)
+            bootstrap_standalone
+        ;;
+    esac
 
 }
 
@@ -37,6 +118,12 @@ do_stop() {
     echo "[rabbitmq] stop ${CONTAINER_NAME} container"
     docker stop "${CONTAINER_NAME}" >/dev/null 2>&1 || true
     docker rm "${CONTAINER_NAME}" >/dev/null 2>&1 || true
+    docker stop "${CONTAINER_NAME}-1" >/dev/null 2>&1 || true
+    docker rm "${CONTAINER_NAME}-1" >/dev/null 2>&1 || true
+    docker stop "${CONTAINER_NAME}-2" >/dev/null 2>&1 || true
+    docker rm "${CONTAINER_NAME}-2" >/dev/null 2>&1 || true
+    docker stop "${CONTAINER_NAME}-3" >/dev/null 2>&1 || true
+    docker rm "${CONTAINER_NAME}-3" >/dev/null 2>&1 || true
 
 }
 
