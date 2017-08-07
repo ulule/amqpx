@@ -4,7 +4,6 @@ import (
 	"sync"
 	"testing"
 
-	"github.com/streadway/amqp"
 	"github.com/stretchr/testify/require"
 
 	"github.com/ulule/amqpx"
@@ -15,8 +14,9 @@ var (
 )
 
 func NewClient(options ...amqpx.Option) (amqpx.Client, error) {
-	dialer := func() (*amqp.Connection, error) {
-		return amqp.Dial(brokerURI)
+	dialer, err := amqpx.SimpleDialer(brokerURI)
+	if err != nil {
+		return nil, err
 	}
 
 	return amqpx.New(dialer, options...)

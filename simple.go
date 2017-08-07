@@ -86,7 +86,7 @@ func (e *Simple) newConnection() error {
 		e.close(e.connection)
 	}
 
-	connection, err := e.dialer()
+	connection, err := e.dialer.dial(0)
 	if err != nil {
 		return errors.Wrap(err, "amqpx: cannot open a new connection")
 	}

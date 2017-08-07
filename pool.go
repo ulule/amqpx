@@ -76,7 +76,7 @@ func (e *Pooler) newConnection() error {
 	defer e.mutex.Unlock()
 
 	idx := len(e.connections)
-	connection, err := e.dialer()
+	connection, err := e.dialer.dial(idx)
 	if err != nil {
 		return err
 	}
@@ -128,7 +128,7 @@ func (e *Pooler) retryConnection(idx int) {
 		}
 
 		// Try to open a new connection.
-		connection, err := e.dialer()
+		connection, err := e.dialer.dial(idx)
 		if err == nil {
 
 			e.mutex.Lock()

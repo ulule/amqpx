@@ -1,15 +1,15 @@
 package amqpx_test
 
 import (
-	"github.com/streadway/amqp"
 	"github.com/ulule/amqpx"
 )
 
 func ExampleNew() {
 	uri := "amqp://..."
 
-	dialer := func() (*amqp.Connection, error) {
-		return amqp.Dial(uri)
+	dialer, err := amqpx.SimpleDialer(uri)
+	if err != nil {
+		// Handle error...
 	}
 
 	// This client will contain 20 amqp connections.
