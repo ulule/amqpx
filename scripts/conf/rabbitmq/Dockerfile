@@ -3,7 +3,9 @@ FROM rabbitmq:3.6.10-management
 COPY rabbitmq-cluster /usr/local/bin/
 COPY standlone.conf /etc/rabbitmq/rabbitmq-standalone.config
 COPY cluster.conf /etc/rabbitmq/rabbitmq-cluster.config
-COPY pre-entrypoint.sh /docker-entrypoint.sh
+COPY docker-entrypoint.sh /docker-entrypoint.sh
+
+ENV RABBITMQ_LOGS=/var/log/rabbitmq/rabbitmq.log RABBITMQ_SASL_LOGS=/var/log/rabbitmq/rabbitmq-sasl.log
 
 RUN chmod u+x /docker-entrypoint.sh && chmod +x /usr/local/bin/rabbitmq-cluster
 

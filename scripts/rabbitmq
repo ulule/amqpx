@@ -16,10 +16,10 @@ CONTAINER_IMAGE="rabbitmq:3.6.10-amqpx"
 BASE_IMAGE="rabbitmq:3.6.10-management"
 
 compose_docker_image() {
-    declare name="$1" path="$2"
+    declare name="$1" path="$2" base="$3"
 
     echo "[rabbitmq] update docker base image"
-    docker pull "${BASE_IMAGE}" || true
+    docker pull "${base}" || true
 
     echo "[rabbitmq] build docker image"
     docker build -t "${name}" "${path}"
@@ -30,21 +30,24 @@ erase_previous_configuration() {
     declare name="$1"
 
     if [[ -n "$(docker ps -a -q -f name="${name}" 2> /dev/null)" ]]; then
-        echo "[rabbitmq] erase previous configuration"
+        echo "[rabbitmq] erase previous configuration for ${name}"
         docker stop "${name}" >/dev/null 2>&1 || true
         docker rm "${name}" >/dev/null 2>&1 || true
     fi
 }
 
 start_rabbitmq_standalone_mode() {
+
     echo "[rabbitmq] start new ${CONTAINER_NAME} container"
     docker run --name "${CONTAINER_NAME}" \
         -p ${DOCKER_QUEUE_TCP_PORT}:5672 \
         -p ${DOCKER_QUEUE_HTTP_PORT}:15672 \
         -d ${CONTAINER_IMAGE} >/dev/null
+
 }
 
 start_rabbitmq_cluster_mode() {
+
     echo "[rabbitmq] start new ${CONTAINER_NAME}-1 container"
     docker run --name "${CONTAINER_NAME}-1" \
         --hostname "${CONTAINER_NAME}-1" \
@@ -77,37 +80,33 @@ start_rabbitmq_cluster_mode() {
         -d ${CONTAINER_IMAGE} >/dev/null
 }
 
-bootstrap_standalone() {
+clean_container() {
 
-    erase_previous_configuration "${CONTAINER_NAME}"
-
-    compose_docker_image "${CONTAINER_IMAGE}" "${DOCKER_CONF_DIRECTORY}"
-
-    start_rabbitmq_standalone_mode
-
-}
-
-bootstrap_cluster() {
-
-    erase_previous_configuration "${CONTAINER_NAME}-1"
-    erase_previous_configuration "${CONTAINER_NAME}-2"
-    erase_previous_configuration "${CONTAINER_NAME}-3"
-
-    compose_docker_image "${CONTAINER_IMAGE}" "${DOCKER_CONF_DIRECTORY}"
-
-    start_rabbitmq_cluster_mode
+    case "$AMQPX_CLUSTER_MODE" in
+        y | Y | yes | true)
+            erase_previous_configuration "${CONTAINER_NAME}-1"
+            erase_previous_configuration "${CONTAINER_NAME}-2"
+            erase_previous_configuration "${CONTAINER_NAME}-3"
+        ;;
+        n | N | no| false | *)
+            erase_previous_configuration "${CONTAINER_NAME}"
+        ;;
+    esac
 
 }
 
 
 do_start() {
 
+    clean_container
+    compose_docker_image "${CONTAINER_IMAGE}" "${DOCKER_CONF_DIRECTORY}" "${BASE_IMAGE}"
+
     case "$AMQPX_CLUSTER_MODE" in
         y | Y | yes | true)
-            bootstrap_cluster
+            start_rabbitmq_cluster_mode
         ;;
         n | N | no| false | *)
-            bootstrap_standalone
+            start_rabbitmq_standalone_mode
         ;;
     esac
 
@@ -115,15 +114,30 @@ do_start() {
 
 do_stop() {
 
-    echo "[rabbitmq] stop ${CONTAINER_NAME} container"
-    docker stop "${CONTAINER_NAME}" >/dev/null 2>&1 || true
-    docker rm "${CONTAINER_NAME}" >/dev/null 2>&1 || true
-    docker stop "${CONTAINER_NAME}-1" >/dev/null 2>&1 || true
-    docker rm "${CONTAINER_NAME}-1" >/dev/null 2>&1 || true
-    docker stop "${CONTAINER_NAME}-2" >/dev/null 2>&1 || true
-    docker rm "${CONTAINER_NAME}-2" >/dev/null 2>&1 || true
-    docker stop "${CONTAINER_NAME}-3" >/dev/null 2>&1 || true
-    docker rm "${CONTAINER_NAME}-3" >/dev/null 2>&1 || true
+    case "$AMQPX_CLUSTER_MODE" in
+        y | Y | yes | true)
+
+            echo "[rabbitmq] stop ${CONTAINER_NAME}-1 container"
+            docker stop "${CONTAINER_NAME}-1" >/dev/null 2>&1 || true
+            docker rm "${CONTAINER_NAME}-1" >/dev/null 2>&1 || true
+
+            echo "[rabbitmq] stop ${CONTAINER_NAME}-2 container"
+            docker stop "${CONTAINER_NAME}-2" >/dev/null 2>&1 || true
+            docker rm "${CONTAINER_NAME}-2" >/dev/null 2>&1 || true
+
+            echo "[rabbitmq] stop ${CONTAINER_NAME}-3 container"
+            docker stop "${CONTAINER_NAME}-3" >/dev/null 2>&1 || true
+            docker rm "${CONTAINER_NAME}-3" >/dev/null 2>&1 || true
+
+        ;;
+        n | N | no| false | *)
+
+            echo "[rabbitmq] stop ${CONTAINER_NAME} container"
+            docker stop "${CONTAINER_NAME}" >/dev/null 2>&1 || true
+            docker rm "${CONTAINER_NAME}" >/dev/null 2>&1 || true
+
+        ;;
+    esac
 
 }
 

@@ -9,7 +9,11 @@ if [ -z "$CLUSTER_WITH" -o "$CLUSTER_WITH" = "$hostname" ]; then
 
   echo "[rabbitmq-cluster] start standalone server"
   cp /etc/rabbitmq/rabbitmq-standalone.config /etc/rabbitmq/rabbitmq.config
-  /usr/lib/rabbitmq/bin/rabbitmq-server
+  /usr/lib/rabbitmq/bin/rabbitmq-server -detached
+
+  # Tail to keep the a foreground process active..
+  sleep 10
+  tail -n 5000 -f /var/log/rabbitmq/*
 
 else
 
@@ -21,7 +25,8 @@ else
   /usr/lib/rabbitmq/bin/rabbitmqctl start_app
 
   # Tail to keep the a foreground process active..
-  tail -f /var/log/*
+  sleep 10
+  tail -n 5000 -f /var/log/rabbitmq/*
 
 fi
 

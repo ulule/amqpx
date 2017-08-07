@@ -10,6 +10,8 @@ if [ -n "$1" ]; then
     OPTIONS="$@"
 fi
 
+export AMQPX_CLUSTER_MODE="yes"
+
 scripts/rabbitmq --start
 sleep 5
 go test -v -race ${OPTIONS}
