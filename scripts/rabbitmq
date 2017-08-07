@@ -56,6 +56,8 @@ start_rabbitmq_cluster_mode() {
         -p 15672:15672 \
         -d ${CONTAINER_IMAGE} >/dev/null
 
+    sleep 15
+
     echo "[rabbitmq] start new ${CONTAINER_NAME}-2 container"
     docker run --name "${CONTAINER_NAME}-2" \
         --hostname "${CONTAINER_NAME}-2" \
@@ -68,12 +70,15 @@ start_rabbitmq_cluster_mode() {
         -p 15673:15672 \
         -d ${CONTAINER_IMAGE} >/dev/null
 
+    sleep 15
+
     echo "[rabbitmq] start new ${CONTAINER_NAME}-3 container"
     docker run --name "${CONTAINER_NAME}-3" \
         --hostname "${CONTAINER_NAME}-3" \
         --link "${CONTAINER_NAME}-1" \
         --link "${CONTAINER_NAME}-2" \
         -e CLUSTER_WITH="${CONTAINER_NAME}-1" \
+        -e CLUSTER_SET_POLICY=true \
         -e ERLANG_COOKIE=foobar \
         -p 5674:5672 \
         -p 15674:15672 \

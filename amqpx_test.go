@@ -10,7 +10,7 @@ import (
 )
 
 var (
-	brokerURI = "amqp://guest:guest@127.0.0.1:5672/"
+	brokerURI = "amqp://guest:guest@127.0.0.1:5672/amqpx"
 )
 
 func NewClient(options ...amqpx.Option) (amqpx.Client, error) {
