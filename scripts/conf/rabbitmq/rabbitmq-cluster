@@ -31,7 +31,7 @@ else
 
   # Configure cluster policy
   if [ -n "$CLUSTER_SET_POLICY" ]; then
-    /usr/lib/rabbitmq/bin/rabbitmqctl set_policy -p amqpx ha-amqpx \
+    /usr/lib/rabbitmq/bin/rabbitmqctl set_policy -p amqpx ha-amqpx --apply-to queues \
       '.*' '{"ha-mode":"all","ha-sync-mode":"automatic"}'
   fi
 
