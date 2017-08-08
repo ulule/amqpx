@@ -173,12 +173,10 @@ func (receiver *Receiver) Start(handler Handler) error {
 			if err != nil {
 				return err
 			}
-		case <-time.After(500 * time.Millisecond):
+		case <-time.After(30 * time.Second):
 			return nil
 		}
 	}
-
-	return nil
 }
 
 type Producer struct {
@@ -248,10 +246,6 @@ func (consumer *Consumer) Start() {
 			consumer.messages = append(consumer.messages, message)
 		}
 	}()
-}
-
-func (consumer *Consumer) write(line string) {
-	consumer.buffer <- line
 }
 
 func (consumer *Consumer) NewReceiver(client amqpx.Client, topic string) {

@@ -10,4 +10,5 @@ dependencies:
 
 test:
   override:
-    - docker-compose -f docker-compose.yml run test
+    - scripts/go-wrapper test
+    - scripts/go-wrapper lint
