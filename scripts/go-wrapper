@@ -1,0 +1,73 @@
+#!/bin/bash
+
+set -eo pipefail
+
+SOURCE_DIRECTORY=$(dirname "${BASH_SOURCE[0]}")
+cd "${SOURCE_DIRECTORY}/.."
+
+ROOT_DIRECTORY=`pwd`
+DOCKER_CONF_DIRECTORY="${ROOT_DIRECTORY}/scripts/conf/go"
+DOCKER_CACHE_DIRECTORY="${DOCKER_CONF_DIRECTORY}/cache"
+
+CONTAINER_NAME="amqpx-go"
+CONTAINER_IMAGE="golang:1.8.3-amqpx"
+BASE_IMAGE="golang:1.8.3"
+
+prepare_docker() {
+    declare src="$1" cnf="$2" cache="$3"
+
+    echo "[go-wrapper] prepare files for Docker"
+    rm -rf "${cache}" || true
+    mkdir -p "${cache}"
+    cp "${cnf}/Dockerfile" "${cache}"
+    cp "${src}/"*.go "${cache}"
+    cp "${src}/gometalinter.json" "${cache}"
+
+}
+
+
+compose_docker_image() {
+    declare name="$1" path="$2" base="$3"
+
+    echo "[go-wrapper] update docker base image"
+    docker pull "${base}" || true
+
+    echo "[go-wrapper] build docker image"
+    docker build -t "${name}" "${path}"
+
+}
+
+do_test() {
+
+    prepare_docker "${ROOT_DIRECTORY}" "${DOCKER_CONF_DIRECTORY}" "${DOCKER_CACHE_DIRECTORY}"
+    compose_docker_image "${CONTAINER_IMAGE}" "${DOCKER_CACHE_DIRECTORY}" "${BASE_IMAGE}"
+
+    echo "[go-wrapper] start new ${CONTAINER_NAME} container"
+    docker run --net=host --rm -t --name "${CONTAINER_NAME}" \
+        -e AMQPX_CLUSTER_MODE="${AMQPX_CLUSTER_MODE}" \
+        ${CONTAINER_IMAGE} go test -v -race
+
+}
+
+do_lint() {
+
+    prepare_docker "${ROOT_DIRECTORY}" "${DOCKER_CONF_DIRECTORY}" "${DOCKER_CACHE_DIRECTORY}"
+    compose_docker_image "${CONTAINER_IMAGE}" "${DOCKER_CACHE_DIRECTORY}" "${BASE_IMAGE}"
+
+    echo "[go-wrapper] start new ${CONTAINER_NAME} container"
+    docker run --net=host --rm -t --name "${CONTAINER_NAME}" \
+        -e AMQPX_CLUSTER_MODE="${AMQPX_CLUSTER_MODE}" \
+        ${CONTAINER_IMAGE} gometalinter --config gometalinter.json --disable=dupl .
+
+}
+
+
+case "$1" in
+    lint)
+        do_lint
+    ;;
+    test | *)
+        do_test
+    ;;
+esac
+exit 0
