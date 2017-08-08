@@ -273,7 +273,7 @@ func GenerateMessages() []string {
 	buffer := []string{}
 	runes := []rune("abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ ")
 	length := len(runes)
-	lines := 30000 + rand.Intn(20000)
+	lines := 3000 + rand.Intn(2000)
 
 	for i := 0; i < lines; i++ {
 		line := &bytes.Buffer{}

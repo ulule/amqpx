@@ -140,13 +140,13 @@ func testClientExchange(is *Runner, client amqpx.Client, topic string) {
 
 	producer := &Producer{runner: is, messages: messages}
 	producer.Start()
-	for i := 0; i < 30; i++ {
+	for i := 0; i < 16; i++ {
 		producer.NewEmitter(client, topic)
 	}
 
 	consumer := &Consumer{runner: is}
 	consumer.Start()
-	for i := 0; i < 30; i++ {
+	for i := 0; i < 16; i++ {
 		consumer.NewReceiver(client, topic)
 	}
 
