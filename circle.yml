@@ -1,10 +1,10 @@
 machine:
   services:
     - docker
-
-dependencies:
   environment:
     AMQPX_CLUSTER_MODE: yes
+
+dependencies:
   override:
     - scripts/rabbitmq
 
