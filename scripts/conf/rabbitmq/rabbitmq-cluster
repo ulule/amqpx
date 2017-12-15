@@ -1,0 +1,43 @@
+#!/bin/bash
+
+set -eo pipefail
+
+hostname=`hostname`
+RABBITMQ_NODENAME=${RABBITMQ_NODENAME:-rabbit}
+
+if [ -z "$CLUSTER_WITH" -o "$CLUSTER_WITH" = "$hostname" ]; then
+
+  echo "[rabbitmq-cluster] start standalone server"
+  cp /etc/rabbitmq/rabbitmq-standalone.config /etc/rabbitmq/rabbitmq.config
+  /usr/lib/rabbitmq/bin/rabbitmq-server -detached
+  sleep 10
+
+  # Configure rabbitmq server
+  /usr/lib/rabbitmq/bin/rabbitmqctl add_vhost amqpx
+  /usr/lib/rabbitmq/bin/rabbitmqctl set_permissions -p amqpx guest ".*" ".*" ".*"
+
+  # Tail to keep the a foreground process active...
+  tail -n 5000 -f /var/log/rabbitmq/*
+
+else
+
+  echo "[rabbitmq-cluster] start server in cluster mode"
+  cp /etc/rabbitmq/rabbitmq-cluster.config /etc/rabbitmq/rabbitmq.config
+  /usr/lib/rabbitmq/bin/rabbitmq-server -detached
+  /usr/lib/rabbitmq/bin/rabbitmqctl stop_app
+  /usr/lib/rabbitmq/bin/rabbitmqctl join_cluster ${ENABLE_RAM:+--ram} $RABBITMQ_NODENAME@$CLUSTER_WITH
+  /usr/lib/rabbitmq/bin/rabbitmqctl start_app
+  sleep 10
+
+  # Configure cluster policy
+  if [ -n "$CLUSTER_SET_POLICY" ]; then
+    /usr/lib/rabbitmq/bin/rabbitmqctl set_policy -p amqpx ha-amqpx --apply-to queues \
+      '.*' '{"ha-mode":"all","ha-sync-mode":"automatic"}'
+  fi
+
+  # Tail to keep the a foreground process active...
+  tail -n 5000 -f /var/log/rabbitmq/*
+
+fi
+
+exit 0

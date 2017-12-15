@@ -15,9 +15,6 @@ var (
 	ErrClientClosed = fmt.Errorf("client is closed")
 )
 
-// Dialer is a function returning a new amqp connection.
-type Dialer func() (*amqp.Connection, error)
-
 // Client interface describe a amqp client.
 type Client interface {
 

@@ -5,15 +5,16 @@ import (
 	"os"
 	"time"
 
-	"github.com/streadway/amqp"
 	"github.com/ulule/amqpx"
 )
 
 func main() {
 	uri := os.Getenv("AMQP_URI")
 
-	dialer := func() (*amqp.Connection, error) {
-		return amqp.Dial(uri)
+	// This dialer will create new connections on a single broker.
+	dialer, err := amqpx.SimpleDialer(uri)
+	if err != nil {
+		panic(err)
 	}
 
 	// This client will contain 20 amqp connections.
