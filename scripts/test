@@ -14,5 +14,5 @@ export AMQPX_CLUSTER_MODE="yes"
 
 scripts/rabbitmq --start
 sleep 10
-go test -v -race ${OPTIONS}
+go test -count=1 -v -race ${OPTIONS}
 scripts/rabbitmq --stop
