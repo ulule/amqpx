@@ -1,4 +1,4 @@
-FROM golang:1.10.0-stretch
+FROM golang:1.10.2-stretch
 
 ADD . /go/src/github.com/ulule/amqpx
 WORKDIR /go/src/github.com/ulule/amqpx
