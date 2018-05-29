@@ -7,6 +7,7 @@ import (
 	"time"
 
 	"github.com/pkg/errors"
+	"github.com/streadway/amqp"
 
 	"github.com/ulule/amqpx"
 )
@@ -79,7 +80,8 @@ func TestPoolerClient_ConcurrentAccess(t *testing.T) {
 
 			time.Sleep(time.Duration(rand.Intn(4000)) * time.Millisecond)
 
-			channel, err := client.Channel()
+			var channel *amqp.Channel
+			channel, err = client.Channel()
 			wg.Done()
 
 			defer func() {
