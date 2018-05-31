@@ -21,6 +21,9 @@ type Client interface {
 	// Channel returns a new amqp's channel from current client unless it's closed.
 	Channel() (*amqp.Channel, error)
 
+	// RetryChannel returns a wrapper around amqp's channel to provider a retry mechanism.
+	RetryChannel() (*Channel, error)
+
 	// Close closes the client.
 	Close() error
 

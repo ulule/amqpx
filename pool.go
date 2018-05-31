@@ -155,6 +155,19 @@ func (e *Pooler) Channel() (*amqp.Channel, error) {
 	return nil, errors.Wrap(ErrNoConnectionAvailable, "amqpx: cannot open a new channel")
 }
 
+// RetryChannel implements Client interface.
+func (e *Pooler) RetryChannel() (*Channel, error) {
+	channel, err := e.Channel()
+	if err != nil {
+		return nil, err
+	}
+
+	return &Channel{
+		Channel:      channel,
+		retryOptions: e.retryOptions,
+	}, nil
+}
+
 // IsClosed returns if the pool is closed.
 func (e *Pooler) IsClosed() bool {
 	e.mutex.RLock()
@@ -195,3 +208,5 @@ func (e *Pooler) close(connection io.Closer) {
 		e.observer.OnClose(err)
 	}
 }
+
+var _ Client = (*Pooler)(nil)

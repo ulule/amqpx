@@ -73,6 +73,19 @@ func (e *Simple) Channel() (*amqp.Channel, error) {
 	return channel, nil
 }
 
+// RetryChannel implements Client interface.
+func (e *Simple) RetryChannel() (*Channel, error) {
+	channel, err := e.Channel()
+	if err != nil {
+		return nil, err
+	}
+
+	return &Channel{
+		Channel:      channel,
+		retryOptions: e.retryOptions,
+	}, nil
+}
+
 func (e *Simple) newConnection() error {
 	if e.connection != nil {
 		e.close(e.connection)
@@ -108,3 +121,5 @@ func (e *Simple) close(connection io.Closer) {
 		e.observer.OnClose(err)
 	}
 }
+
+var _ Client = (*Simple)(nil)
