@@ -24,7 +24,7 @@ type clientOptions struct {
 type retryOptions struct {
 	retryInitialInterval time.Duration
 	retryMaxInterval     time.Duration
-	retryMaxElapsedtime  time.Duration
+	retryMaxElapsedTime  time.Duration
 }
 
 // WithCapacity will configure a client with a connections pool and given capacity.
@@ -69,7 +69,7 @@ func WithRetry(initialInterval, maxInterval, maxElapsedTime time.Duration) Optio
 
 		options.retryInitialInterval = initialInterval
 		options.retryMaxInterval = maxInterval
-		options.retryMaxElapsedtime = maxElapsedTime
+		options.retryMaxElapsedTime = maxElapsedTime
 
 		return nil
 	})

@@ -39,7 +39,7 @@ func New(dialer Dialer, options ...Option) (Client, error) {
 		retryOptions: retryOptions{
 			retryInitialInterval: defaultRetryInitialInterval,
 			retryMaxInterval:     defaultRetryMaxInterval,
-			retryMaxElapsedtime:  defaultRetryMaxElapsedTime,
+			retryMaxElapsedTime:  defaultRetryMaxElapsedTime,
 		},
 	}
 
