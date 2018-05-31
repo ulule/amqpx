@@ -1,7 +1,6 @@
 package amqpx
 
 import (
-	"fmt"
 	"io"
 	"math/rand"
 	"sync"
@@ -14,13 +13,6 @@ import (
 const (
 	// DefaultConnectionsCapacity is default connections pool capacity.
 	DefaultConnectionsCapacity = 10
-)
-
-var (
-	// ErrInvalidConnectionsPoolCapacity occurs when the defined connections pool's capacity is invalid .
-	ErrInvalidConnectionsPoolCapacity = fmt.Errorf("invalid connections pool capacity")
-	// ErrNoConnectionAvailable occurs when the connections pool's has no healthy connections.
-	ErrNoConnectionAvailable = fmt.Errorf("no connection available")
 )
 
 // Pooler implements the Client interface using a connections pool.

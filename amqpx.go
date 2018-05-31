@@ -4,15 +4,8 @@
 package amqpx
 
 import (
-	"fmt"
-
 	"github.com/pkg/errors"
 	"github.com/streadway/amqp"
-)
-
-var (
-	// ErrClientClosed occurs when operating on a closed client.
-	ErrClientClosed = fmt.Errorf("client is closed")
 )
 
 // Client interface describe a amqp client.

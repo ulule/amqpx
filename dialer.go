@@ -1,7 +1,6 @@
 package amqpx
 
 import (
-	"fmt"
 	"net"
 	"time"
 
@@ -13,12 +12,6 @@ import (
 var (
 	defaultDialerTimeout   = 30 * time.Second
 	defaultDialerHeartbeat = 10 * time.Second
-)
-
-// Errors
-var (
-	// ErrBrokerURIRequired occurs when a dialer has no broker URI.
-	ErrBrokerURIRequired = fmt.Errorf("broker URI is required")
 )
 
 // Dialer is an interface that return a new amqp connection.

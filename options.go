@@ -31,3 +31,15 @@ func WithoutConnectionsPool() Option {
 		return nil
 	})
 }
+
+// WithObserver will configure client with given observer.
+func WithObserver(observer Observer) Option {
+	return option(func(options *clientOptions) error {
+		if observer == nil {
+			return ErrObserverRequired
+		}
+
+		options.observer = observer
+		return nil
+	})
+}
