@@ -14,10 +14,14 @@ func (o option) apply(instance *clientOptions) error {
 }
 
 type clientOptions struct {
-	dialer               Dialer
-	observer             Observer
-	usePool              bool
-	capacity             int
+	dialer   Dialer
+	observer Observer
+	usePool  bool
+	capacity int
+	retryOptions
+}
+
+type retryOptions struct {
 	retryInitialInterval time.Duration
 	retryMaxInterval     time.Duration
 	retryMaxElapsedtime  time.Duration

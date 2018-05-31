@@ -16,12 +16,14 @@ type Simple struct {
 	observer   Observer
 	connection *amqp.Connection
 	closed     bool
+	retryOptions
 }
 
 func newSimple(options *clientOptions) (Client, error) {
 	instance := &Simple{
-		dialer:   options.dialer,
-		observer: options.observer,
+		dialer:       options.dialer,
+		observer:     options.observer,
+		retryOptions: options.retryOptions,
 	}
 
 	err := instance.newConnection()

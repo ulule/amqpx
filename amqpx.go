@@ -32,13 +32,15 @@ type Client interface {
 func New(dialer Dialer, options ...Option) (Client, error) {
 	// Default client options.
 	opts := &clientOptions{
-		dialer:               dialer,
-		observer:             &defaultObserver{},
-		usePool:              true,
-		capacity:             DefaultConnectionsCapacity,
-		retryInitialInterval: defaultRetryInitialInterval,
-		retryMaxInterval:     defaultRetryMaxInterval,
-		retryMaxElapsedtime:  defaultRetryMaxElapsedTime,
+		dialer:   dialer,
+		observer: &defaultObserver{},
+		usePool:  true,
+		capacity: DefaultConnectionsCapacity,
+		retryOptions: retryOptions{
+			retryInitialInterval: defaultRetryInitialInterval,
+			retryMaxInterval:     defaultRetryMaxInterval,
+			retryMaxElapsedtime:  defaultRetryMaxElapsedTime,
+		},
 	}
 
 	// Applies options.
