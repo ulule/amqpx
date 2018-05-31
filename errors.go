@@ -17,4 +17,7 @@ var (
 
 	// ErrObserverRequired occurs when given observer is empty.
 	ErrObserverRequired = fmt.Errorf("an observer instance is required")
+
+	// ErrInvalidRetryDuration occurs when the defined retry duration is invalid .
+	ErrInvalidRetryDuration = fmt.Errorf("invalid retry duration")
 )

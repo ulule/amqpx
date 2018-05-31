@@ -1,5 +1,7 @@
 package amqpx
 
+import "time"
+
 // Option is used to define client configuration.
 type Option interface {
 	apply(*clientOptions) error
@@ -12,10 +14,13 @@ func (o option) apply(instance *clientOptions) error {
 }
 
 type clientOptions struct {
-	dialer   Dialer
-	observer Observer
-	usePool  bool
-	capacity int
+	dialer               Dialer
+	observer             Observer
+	usePool              bool
+	capacity             int
+	retryInitialInterval time.Duration
+	retryMaxInterval     time.Duration
+	retryMaxElapsedtime  time.Duration
 }
 
 // WithCapacity will configure a client with a connections pool and given capacity.
@@ -47,6 +52,21 @@ func WithObserver(observer Observer) Option {
 		}
 
 		options.observer = observer
+		return nil
+	})
+}
+
+// WithRetry will configure a client with the given retry durations.
+func WithRetry(initialInterval, maxInterval, maxElapsedTime time.Duration) Option {
+	return option(func(options *clientOptions) error {
+		if initialInterval <= 0 || maxInterval <= 0 || maxElapsedTime <= 0 {
+			return ErrInvalidRetryDuration
+		}
+
+		options.retryInitialInterval = initialInterval
+		options.retryMaxInterval = maxInterval
+		options.retryMaxElapsedtime = maxElapsedTime
+
 		return nil
 	})
 }

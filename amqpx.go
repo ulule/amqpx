@@ -4,8 +4,16 @@
 package amqpx
 
 import (
+	"time"
+
 	"github.com/pkg/errors"
 	"github.com/streadway/amqp"
+)
+
+const (
+	defaultRetryInitialInterval = 100 * time.Millisecond
+	defaultRetryMaxInterval     = 32 * time.Second
+	defaultRetryMaxElapsedTime  = 7 * time.Minute
 )
 
 // Client interface describe a amqp client.
@@ -24,10 +32,13 @@ type Client interface {
 func New(dialer Dialer, options ...Option) (Client, error) {
 	// Default client options.
 	opts := &clientOptions{
-		dialer:   dialer,
-		observer: &defaultObserver{},
-		usePool:  true,
-		capacity: DefaultConnectionsCapacity,
+		dialer:               dialer,
+		observer:             &defaultObserver{},
+		usePool:              true,
+		capacity:             DefaultConnectionsCapacity,
+		retryInitialInterval: defaultRetryInitialInterval,
+		retryMaxInterval:     defaultRetryMaxInterval,
+		retryMaxElapsedtime:  defaultRetryMaxElapsedTime,
 	}
 
 	// Applies options.
