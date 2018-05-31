@@ -14,3 +14,5 @@ type defaultObserver struct{}
 
 func (defaultObserver) OnError(err error) {}
 func (defaultObserver) OnClose(err error) {}
+
+var _ Observer = (*defaultObserver)(nil)
