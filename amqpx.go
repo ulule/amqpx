@@ -4,15 +4,7 @@
 package amqpx
 
 import (
-	"time"
-
 	"github.com/pkg/errors"
-)
-
-const (
-	defaultRetryInitialInterval = 100 * time.Millisecond
-	defaultRetryMaxInterval     = 32 * time.Second
-	defaultRetryMaxElapsedTime  = 7 * time.Minute
 )
 
 // Client interface describe a amqp client.
