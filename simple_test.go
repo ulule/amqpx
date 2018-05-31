@@ -7,7 +7,6 @@ import (
 	"time"
 
 	"github.com/pkg/errors"
-	"github.com/streadway/amqp"
 
 	"github.com/ulule/amqpx"
 )
@@ -56,43 +55,37 @@ func TestSimpleClient_Close(t *testing.T) {
 
 func TestSimpleClient_ConcurrentAccess(t *testing.T) {
 	is := NewRunner(t)
-	wg := &sync.WaitGroup{}
 
 	client, err := NewClient(amqpx.WithoutConnectionsPool())
-	is.NoError(err)
 	is.NotNil(client)
+	is.NoError(err)
 	defer func() {
 		is.NoError(client.Close())
 	}()
 
-	for i := 0; i < 8000; i++ {
+	var wg sync.WaitGroup
+	for i := 0; i < concurrentAccessNChannels; i++ {
 		wg.Add(1)
-		go func() {
 
+		go func(clt amqpx.Client, w *sync.WaitGroup) {
 			time.Sleep(time.Duration(rand.Intn(4000)) * time.Millisecond)
 
-			var channel *amqp.Channel
-			channel, err = client.Channel()
-			wg.Done()
-
+			ch, cherr := clt.Channel()
+			w.Done()
 			defer func() {
-				if channel != nil {
-					thr := channel.Close()
-					_ = thr
+				if ch != nil {
+					_ = ch.Close()
 				}
 			}()
 
-			if err != nil && errors.Cause(err) != amqpx.ErrClientClosed {
-				is.NoError(err)
+			if cherr != nil && errors.Cause(cherr) != amqpx.ErrClientClosed {
+				is.NoError(cherr)
 			}
-
-		}()
+		}(client, &wg)
 	}
 
 	// Wait a few seconds to simulate a SIGKILL
-	time.Sleep(2 * time.Second)
-	err = client.Close()
-	is.NoError(err)
-
+	time.Sleep(sigkillSleep)
+	is.NoError(client.Close())
 	wg.Wait()
 }

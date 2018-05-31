@@ -5,6 +5,7 @@ import (
 	"sort"
 	"sync"
 	"testing"
+	"time"
 
 	"github.com/stretchr/testify/require"
 
@@ -18,6 +19,11 @@ var (
 		"amqp://guest:guest@127.0.0.1:5673/amqpx",
 		"amqp://guest:guest@127.0.0.1:5674/amqpx",
 	}
+)
+
+const (
+	concurrentAccessNChannels = 2000
+	sigkillSleep              = 2 * time.Second
 )
 
 func IsClusterMode() bool {
