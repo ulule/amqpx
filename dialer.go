@@ -4,7 +4,6 @@ import (
 	"net"
 	"time"
 
-	"github.com/pkg/errors"
 	"github.com/streadway/amqp"
 )
 
@@ -19,10 +18,6 @@ var (
 type Dialer interface {
 	dial(id int) (*amqp.Connection, error)
 }
-
-// -----------------------------------------------------------------------------
-// Options
-// -----------------------------------------------------------------------------
 
 // DialerOptions are options given to dialer instance.
 type DialerOptions struct {
@@ -51,76 +46,6 @@ func NewDialerOptions(fromOptions ...DialerOptions) DialerOptions {
 
 	return dialerOptions
 }
-
-// -----------------------------------------------------------------------------
-// Simple
-// -----------------------------------------------------------------------------
-
-// SimpleDialer gives a Dialer that use a simple broker.
-func SimpleDialer(uri string, options ...DialerOptions) (Dialer, error) {
-	if uri == "" {
-		return nil, errors.Wrap(
-			ErrBrokerURIRequired,
-			"amqpx: cannot create a new dialer")
-	}
-
-	return &simpleDialer{
-		DialerOptions: NewDialerOptions(options...),
-		uri:           uri,
-	}, nil
-}
-
-type simpleDialer struct {
-	DialerOptions
-	uri string
-}
-
-func (e *simpleDialer) dial(id int) (*amqp.Connection, error) {
-	return amqp.DialConfig(e.uri, amqp.Config{
-		Dial:      dialer(e.Timeout),
-		Heartbeat: e.Heartbeat,
-	})
-}
-
-var _ Dialer = (*simpleDialer)(nil)
-
-// -----------------------------------------------------------------------------
-// Cluster
-// -----------------------------------------------------------------------------
-
-// ClusterDialer is a Dialer that use a cluster of broker.
-func ClusterDialer(list []string, options ...DialerOptions) (Dialer, error) {
-	if len(list) == 0 {
-		return nil, errors.Wrap(
-			ErrBrokerURIRequired,
-			"amqpx: cannot create a new dialer")
-	}
-
-	return &clusterDialer{
-		DialerOptions: NewDialerOptions(options...),
-		list:          list,
-	}, nil
-}
-
-type clusterDialer struct {
-	DialerOptions
-	list []string
-}
-
-func (e *clusterDialer) dial(id int) (*amqp.Connection, error) {
-	idx := (id) % len(e.list)
-	uri := e.list[idx]
-	return amqp.DialConfig(uri, amqp.Config{
-		Dial:      dialer(e.Timeout),
-		Heartbeat: e.Heartbeat,
-	})
-}
-
-var _ Dialer = (*clusterDialer)(nil)
-
-// -----------------------------------------------------------------------------
-// Custom dialer
-// -----------------------------------------------------------------------------
 
 type amqpDialer func(network string, addr string) (net.Conn, error)
 
