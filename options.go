@@ -11,6 +11,13 @@ func (o option) apply(instance *clientOptions) error {
 	return o(instance)
 }
 
+type clientOptions struct {
+	dialer   Dialer
+	observer Observer
+	usePool  bool
+	capacity int
+}
+
 // WithCapacity will configure a client with a connections pool and given capacity.
 func WithCapacity(capacity int) Option {
 	return option(func(options *clientOptions) error {

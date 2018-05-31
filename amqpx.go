@@ -20,13 +20,6 @@ type Client interface {
 	IsClosed() bool
 }
 
-type clientOptions struct {
-	dialer   Dialer
-	observer Observer
-	usePool  bool
-	capacity int
-}
-
 // New returns a new client using given configuration.
 func New(dialer Dialer, options ...Option) (Client, error) {
 	// Default client options.
