@@ -17,7 +17,6 @@ var (
 
 // Client interface describe a amqp client.
 type Client interface {
-
 	// Channel returns a new amqp's channel from current client unless it's closed.
 	Channel() (*amqp.Channel, error)
 
@@ -26,17 +25,6 @@ type Client interface {
 
 	// IsClosed returns if the client is closed.
 	IsClosed() bool
-}
-
-// Option is used to define client configuration.
-type Option interface {
-	apply(*clientOptions) error
-}
-
-type option func(*clientOptions) error
-
-func (o option) apply(instance *clientOptions) error {
-	return o(instance)
 }
 
 type clientOptions struct {

@@ -26,26 +26,11 @@ var (
 // Pooler implements the Client interface using a connections pool.
 // It will reuse a healthy connection from pool when a channel is requested.
 type Pooler struct {
-	mutex sync.RWMutex
-
-	dialer   Dialer
-	observer Observer
-
+	mutex       sync.RWMutex
+	dialer      Dialer
+	observer    Observer
 	connections []*amqp.Connection
 	closed      bool
-}
-
-// WithCapacity will configure a client with a connections pool and given capacity.
-func WithCapacity(capacity int) Option {
-	return option(func(options *clientOptions) error {
-		if capacity <= 0 {
-			return ErrInvalidConnectionsPoolCapacity
-		}
-
-		options.usePool = true
-		options.capacity = capacity
-		return nil
-	})
 }
 
 // newConnectionsPool returns a new client which use a connections pool for amqp's channel.

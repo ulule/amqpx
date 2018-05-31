@@ -8,22 +8,12 @@ import (
 	"github.com/streadway/amqp"
 )
 
-// WithoutConnectionsPool will configure a client without a connections pool.
-func WithoutConnectionsPool() Option {
-	return option(func(options *clientOptions) error {
-		options.usePool = false
-		return nil
-	})
-}
-
 // Simple implements the Client interface without a connections pool.
 // It will use a single connection for multiple channel.
 type Simple struct {
-	mutex sync.RWMutex
-
-	dialer   Dialer
-	observer Observer
-
+	mutex      sync.RWMutex
+	dialer     Dialer
+	observer   Observer
 	connection *amqp.Connection
 	closed     bool
 }
