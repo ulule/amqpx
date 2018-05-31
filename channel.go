@@ -1,23 +1,52 @@
 package amqpx
 
-import (
-	"github.com/streadway/amqp"
-	"github.com/ulule/kyu/try"
-)
+import "github.com/streadway/amqp"
 
-// Channel is a wrapper around amqp.Channel to provide retry feature.
-type Channel struct {
-	*amqp.Channel
-	retryOptions
+// Channel represents an amqp channel.
+type Channel interface {
+	Close() error
+	NotifyClose(c chan *Error) chan *Error
+	NotifyFlow(c chan bool) chan bool
+	NotifyReturn(c chan Return) chan Return
+	NotifyCancel(c chan string) chan string
+	NotifyConfirm(ack, nack chan uint64) (chan uint64, chan uint64)
+	NotifyPublish(confirm chan Confirmation) chan Confirmation
+	Qos(prefetchCount, prefetchSize int, global bool) error
+	Cancel(consumer string, noWait bool) error
+	QueueDeclare(name string, durable, autoDelete, exclusive, noWait bool, args Table) (Queue, error)
+	QueueDeclarePassive(name string, durable, autoDelete, exclusive, noWait bool, args Table) (Queue, error)
+	QueueInspect(name string) (Queue, error)
+	QueueBind(name, key, exchange string, noWait bool, args Table) error
+	QueueUnbind(name, key, exchange string, args Table) error
+	QueuePurge(name string, noWait bool) (int, error)
+	QueueDelete(name string, ifUnused, ifEmpty, noWait bool) (int, error)
+	Consume(queue, consumer string, autoAck, exclusive, noLocal, noWait bool, args Table) (<-chan Delivery, error)
+	ExchangeDeclare(name, kind string, durable, autoDelete, internal, noWait bool, args Table) error
+	ExchangeDeclarePassive(name, kind string, durable, autoDelete, internal, noWait bool, args Table) error
+	ExchangeDelete(name string, ifUnused, noWait bool) error
+	ExchangeBind(destination, key, source string, noWait bool, args Table) error
+	ExchangeUnbind(destination, key, source string, noWait bool, args Table) error
+	Publish(exchange string, key string, mandatory bool, immediate bool, msg Publishing) error
+	Get(queue string, autoAck bool) (msg Delivery, ok bool, err error)
+	Tx() error
+	TxCommit() error
+	TxRollback() error
+	Flow(active bool) error
+	Confirm(noWait bool) error
+	Recover(requeue bool) error
+	Ack(tag uint64, multiple bool) error
+	Nack(tag uint64, multiple bool, requeue bool) error
+	Reject(tag uint64, requeue bool) error
 }
 
-// Publish overrides amqp.Channel.Publish method to provide a retry mechanism.
-func (ch *Channel) Publish(exchange string, key string, mandatory bool, immediate bool, msg amqp.Publishing) error {
-	return try.Try(func() error {
-		return ch.Channel.Publish(exchange, key, mandatory, immediate, msg)
-	}, try.Option{
-		InitialInterval: ch.retryInitialInterval,
-		MaxInterval:     ch.retryMaxInterval,
-		MaxElapsedTime:  ch.retryMaxElapsedTime,
-	})
+func newChannel(channel *amqp.Channel, opts clientOptions) Channel {
+	if opts.useRetry {
+		return &channelRetry{
+			channel:      channel,
+			retryOptions: opts.retryOptions,
+		}
+
+	}
+
+	return channel
 }

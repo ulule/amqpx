@@ -16,17 +16,29 @@ const (
 	defaultRetryMaxElapsedTime  = 7 * time.Minute
 )
 
+type (
+	// Table is an alias to amqp.Table
+	Table = amqp.Table
+	// Queue is an alias to amqp.Queue
+	Queue = amqp.Queue
+	// Publishing is an alias to amqp.Publishing
+	Publishing = amqp.Publishing
+	// Delivery is an alias to amqp.Delivery
+	Delivery = amqp.Delivery
+	// Confirmation is an alias to amqp.Confirmation
+	Confirmation = amqp.Confirmation
+	// Return is an alias to amqp.Return
+	Return = amqp.Return
+	// Error is an alias to amqp.Error
+	Error = amqp.Error
+)
+
 // Client interface describe a amqp client.
 type Client interface {
 	// Channel returns a new amqp's channel from current client unless it's closed.
-	Channel() (*amqp.Channel, error)
-
-	// RetryChannel returns a wrapper around amqp's channel to provider a retry mechanism.
-	RetryChannel() (*Channel, error)
-
+	Channel() (Channel, error)
 	// Close closes the client.
 	Close() error
-
 	// IsClosed returns if the client is closed.
 	IsClosed() bool
 }
@@ -39,7 +51,10 @@ func New(dialer Dialer, options ...Option) (Client, error) {
 		observer: &defaultObserver{},
 		usePool:  true,
 		capacity: DefaultConnectionsCapacity,
+
+		// By default, retry is disabled but we set sane defaults.
 		retryOptions: retryOptions{
+			useRetry:             false,
 			retryInitialInterval: defaultRetryInitialInterval,
 			retryMaxInterval:     defaultRetryMaxInterval,
 			retryMaxElapsedTime:  defaultRetryMaxElapsedTime,

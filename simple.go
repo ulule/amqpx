@@ -35,7 +35,7 @@ func newSimple(options *clientOptions) (Client, error) {
 }
 
 // Channel returns a new amqp's channel from current client unless it's closed.
-func (e *Simple) Channel() (*amqp.Channel, error) {
+func (e *Simple) Channel() (Channel, error) {
 	e.mutex.Lock()
 	defer e.mutex.Unlock()
 
@@ -71,19 +71,6 @@ func (e *Simple) Channel() (*amqp.Channel, error) {
 	}
 
 	return channel, nil
-}
-
-// RetryChannel implements Client interface.
-func (e *Simple) RetryChannel() (*Channel, error) {
-	channel, err := e.Channel()
-	if err != nil {
-		return nil, err
-	}
-
-	return &Channel{
-		Channel:      channel,
-		retryOptions: e.retryOptions,
-	}, nil
 }
 
 func (e *Simple) newConnection() error {

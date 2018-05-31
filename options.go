@@ -22,6 +22,7 @@ type clientOptions struct {
 }
 
 type retryOptions struct {
+	useRetry             bool
 	retryInitialInterval time.Duration
 	retryMaxInterval     time.Duration
 	retryMaxElapsedTime  time.Duration
@@ -60,13 +61,22 @@ func WithObserver(observer Observer) Option {
 	})
 }
 
-// WithRetry will configure a client with the given retry durations.
-func WithRetry(initialInterval, maxInterval, maxElapsedTime time.Duration) Option {
+// WithRetry will enable retry.
+func WithRetry() Option {
+	return option(func(options *clientOptions) error {
+		options.useRetry = true
+		return nil
+	})
+}
+
+// WithRetryDurations will configure a client with the given retry durations.
+func WithRetryDurations(initialInterval, maxInterval, maxElapsedTime time.Duration) Option {
 	return option(func(options *clientOptions) error {
 		if initialInterval <= 0 || maxInterval <= 0 || maxElapsedTime <= 0 {
 			return ErrInvalidRetryDuration
 		}
 
+		options.useRetry = true
 		options.retryInitialInterval = initialInterval
 		options.retryMaxInterval = maxInterval
 		options.retryMaxElapsedTime = maxElapsedTime
