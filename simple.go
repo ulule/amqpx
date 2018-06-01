@@ -43,8 +43,10 @@ func (e *Simple) Channel() (Channel, error) {
 		return nil, errors.Wrap(ErrClientClosed, "amqpx: cannot open a new channel")
 	}
 
+	var channel Channel
+
 	ch, err := e.connection.Channel()
-	channel := newChannel(ch, e.retrier)
+	channel = newChannel(ch, e.retrier)
 	if err != nil && err != amqp.ErrClosed {
 		if ch != nil {
 			e.close(channel)
@@ -62,7 +64,7 @@ func (e *Simple) Channel() (Channel, error) {
 
 		// And obtain a new channel.
 		ch, err = e.connection.Channel()
-		channel := newChannel(ch, e.retrier)
+		channel = newChannel(ch, e.retrier)
 		if err != nil {
 			if ch != nil {
 				e.close(channel)
