@@ -27,14 +27,7 @@ func New(dialer Dialer, options ...Option) (Client, error) {
 		observer: &defaultObserver{},
 		usePool:  true,
 		capacity: DefaultConnectionsCapacity,
-
-		// By default, retry is disabled but we set sane defaults.
-		retryOptions: retryOptions{
-			useRetry:             false,
-			retryInitialInterval: defaultRetryInitialInterval,
-			retryMaxInterval:     defaultRetryMaxInterval,
-			retryMaxElapsedTime:  defaultRetryMaxElapsedTime,
-		},
+		retry:    retryOptions{},
 	}
 
 	// Applies options.

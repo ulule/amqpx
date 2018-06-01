@@ -18,14 +18,16 @@ type clientOptions struct {
 	observer Observer
 	usePool  bool
 	capacity int
-	retryOptions
+	retry    retryOptions
 }
 
 type retryOptions struct {
-	useRetry             bool
-	retryInitialInterval time.Duration
-	retryMaxInterval     time.Duration
-	retryMaxElapsedTime  time.Duration
+	strategy    retryStrategy
+	exponential struct {
+		initialInterval time.Duration
+		maxInterval     time.Duration
+		maxElapsedTime  time.Duration
+	}
 }
 
 // WithCapacity will configure a client with a connections pool and given capacity.
@@ -61,25 +63,17 @@ func WithObserver(observer Observer) Option {
 	})
 }
 
-// WithRetry will enable retry.
-func WithRetry() Option {
-	return option(func(options *clientOptions) error {
-		options.useRetry = true
-		return nil
-	})
-}
-
-// WithRetryDurations will configure a client with the given retry durations.
-func WithRetryDurations(initialInterval, maxInterval, maxElapsedTime time.Duration) Option {
+// WithRetryExponential will configure a client with the given retry exponential durations.
+func WithRetryExponential(initialInterval, maxInterval, maxElapsedTime time.Duration) Option {
 	return option(func(options *clientOptions) error {
 		if initialInterval <= 0 || maxInterval <= 0 || maxElapsedTime <= 0 {
 			return ErrInvalidRetryDuration
 		}
 
-		options.useRetry = true
-		options.retryInitialInterval = initialInterval
-		options.retryMaxInterval = maxInterval
-		options.retryMaxElapsedTime = maxElapsedTime
+		options.retry.strategy = retryStrategyExponential
+		options.retry.exponential.initialInterval = initialInterval
+		options.retry.exponential.maxInterval = maxInterval
+		options.retry.exponential.maxElapsedTime = maxElapsedTime
 
 		return nil
 	})

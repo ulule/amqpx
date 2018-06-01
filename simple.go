@@ -16,14 +16,14 @@ type Simple struct {
 	observer   Observer
 	connection *amqp.Connection
 	closed     bool
-	retryOptions
+	retrier    retrier
 }
 
 func newSimple(options *clientOptions) (Client, error) {
 	instance := &Simple{
-		dialer:       options.dialer,
-		observer:     options.observer,
-		retryOptions: options.retryOptions,
+		dialer:   options.dialer,
+		observer: options.observer,
+		retrier:  newRetrier(options.retry),
 	}
 
 	err := instance.newConnection()
@@ -43,9 +43,10 @@ func (e *Simple) Channel() (Channel, error) {
 		return nil, errors.Wrap(ErrClientClosed, "amqpx: cannot open a new channel")
 	}
 
-	channel, err := e.connection.Channel()
+	ch, err := e.connection.Channel()
+	channel := newChannel(ch, e.retrier)
 	if err != nil && err != amqp.ErrClosed {
-		if channel != nil {
+		if ch != nil {
 			e.close(channel)
 		}
 		return nil, errors.Wrap(err, "amqpx: cannot open a new channel")
@@ -53,7 +54,6 @@ func (e *Simple) Channel() (Channel, error) {
 
 	// If connection is closed...
 	if err == amqp.ErrClosed {
-
 		// Try to open a new one.
 		err = e.newConnection()
 		if err != nil {
@@ -61,9 +61,10 @@ func (e *Simple) Channel() (Channel, error) {
 		}
 
 		// And obtain a new channel.
-		channel, err = e.connection.Channel()
+		ch, err = e.connection.Channel()
+		channel := newChannel(ch, e.retrier)
 		if err != nil {
-			if channel != nil {
+			if ch != nil {
 				e.close(channel)
 			}
 			return nil, errors.Wrap(err, "amqpx: cannot open a new channel")
