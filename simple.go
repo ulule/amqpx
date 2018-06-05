@@ -40,18 +40,13 @@ func (e *Simple) Channel() (Channel, error) {
 	defer e.mutex.Unlock()
 
 	if e.closed {
-		return nil, errors.Wrap(ErrClientClosed, "amqpx: cannot open a new channel")
+		return nil, errors.Wrap(ErrClientClosed, ErrOpenChannel.Error())
 	}
 
-	var channel Channel
-
-	ch, err := e.connection.Channel()
-	channel = newChannel(ch, e.retrier)
-	if err != nil && err != amqp.ErrClosed {
-		if ch != nil {
-			e.close(channel)
-		}
-		return nil, errors.Wrap(err, "amqpx: cannot open a new channel")
+	// Try to get a channel.
+	channel, err := e.getChannel(e.connection)
+	if err != nil {
+		return nil, errors.WithStack(ErrOpenChannel)
 	}
 
 	// If connection is closed...
@@ -62,14 +57,9 @@ func (e *Simple) Channel() (Channel, error) {
 			return nil, err
 		}
 
-		// And obtain a new channel.
-		ch, err = e.connection.Channel()
-		channel = newChannel(ch, e.retrier)
+		channel, err = e.getChannel(e.connection)
 		if err != nil {
-			if ch != nil {
-				e.close(channel)
-			}
-			return nil, errors.Wrap(err, "amqpx: cannot open a new channel")
+			return nil, errors.WithStack(ErrOpenChannel)
 		}
 	}
 
@@ -83,7 +73,7 @@ func (e *Simple) newConnection() error {
 
 	connection, err := e.dialer.dial(0)
 	if err != nil {
-		return errors.Wrap(err, "amqpx: cannot open a new connection")
+		return errors.Wrap(err, ErrOpenConnection.Error())
 	}
 
 	e.connection = connection
@@ -110,6 +100,26 @@ func (e *Simple) close(connection io.Closer) {
 	if err != nil {
 		e.observer.OnClose(err)
 	}
+}
+
+func (e *Simple) getChannel(conn *amqp.Connection) (Channel, error) {
+	var (
+		err error
+		ch  *amqp.Channel
+	)
+
+	err = e.retrier.retry(func() error {
+		ch, err = conn.Channel()
+		if err != nil && err != amqp.ErrClosed {
+			if ch != nil {
+				e.close(ch)
+			}
+			return errors.Wrap(err, ErrOpenChannel.Error())
+		}
+		return nil
+	})
+
+	return newChannel(ch, e.retrier), nil
 }
 
 var _ Client = (*Simple)(nil)

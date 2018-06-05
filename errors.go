@@ -1,6 +1,9 @@
 package amqpx
 
-import "fmt"
+import (
+	"errors"
+	"fmt"
+)
 
 var (
 	// ErrInvalidConnectionsPoolCapacity occurs when the defined connections pool's capacity is invalid .
@@ -20,4 +23,10 @@ var (
 
 	// ErrInvalidRetryDuration occurs when the defined retry duration is invalid .
 	ErrInvalidRetryDuration = fmt.Errorf("invalid retry duration")
+
+	// ErrOpenConnection occurs when a new connection cannot be open.
+	ErrOpenConnection = errors.New("cannot open a new connection")
+
+	// ErrOpenChannel occurs when a new channel cannot be open.
+	ErrOpenChannel = errors.New("cannot open a new channel")
 )
