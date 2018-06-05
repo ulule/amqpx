@@ -18,7 +18,7 @@ type Pooler struct {
 	observer    Observer
 	connections []*amqp.Connection
 	closed      bool
-	retrier     retrier
+	retriers    *retriers
 }
 
 // newConnectionsPool returns a new client which use a connections pool for amqp's channel.
@@ -27,7 +27,7 @@ func newConnectionsPool(options *clientOptions) (Client, error) {
 	instance := &Pooler{
 		dialer:   options.dialer,
 		observer: options.observer,
-		retrier:  newRetrier(options.retry),
+		retriers: newRetriers(options.retriers),
 	}
 
 	// Create connections pool.
@@ -134,7 +134,7 @@ func (e *Pooler) Channel() (Channel, error) {
 		}
 
 		if connection != nil {
-			return openChannel(connection, e.retrier, e.observer)
+			return openChannel(connection, e.retriers.channel, e.observer)
 		}
 	}
 

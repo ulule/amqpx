@@ -8,7 +8,7 @@ type exponentialRetrier struct {
 	backoff backoff.BackOff
 }
 
-func newExponentialRetrier(opts retryOptions) retrier {
+func newExponentialRetrier(opts retrierOptions) retrier {
 	bo := backoff.NewExponentialBackOff()
 	bo.InitialInterval = defaultRetryInitialInterval
 	bo.MaxInterval = defaultRetryMaxInterval

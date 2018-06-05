@@ -18,16 +18,21 @@ type clientOptions struct {
 	observer Observer
 	usePool  bool
 	capacity int
-	retry    retryOptions
+	retriers retriersOptions
 }
 
-type retryOptions struct {
+type retrierOptions struct {
 	strategy    retryStrategy
 	exponential struct {
 		initialInterval time.Duration
 		maxInterval     time.Duration
 		maxElapsedTime  time.Duration
 	}
+}
+
+type retriersOptions struct {
+	connection retrierOptions
+	channel    retrierOptions
 }
 
 // WithCapacity will configure a client with a connections pool and given capacity.
@@ -63,17 +68,35 @@ func WithObserver(observer Observer) Option {
 	})
 }
 
-// WithRetryExponential will configure a client with the given retry exponential durations.
-func WithRetryExponential(initialInterval, maxInterval, maxElapsedTime time.Duration) Option {
+// WithExponentialConnectionRetry will configure a client with the given exponential
+// connection retry durations.
+func WithExponentialConnectionRetry(initialInterval, maxInterval, maxElapsedTime time.Duration) Option {
 	return option(func(options *clientOptions) error {
 		if initialInterval <= 0 || maxInterval <= 0 || maxElapsedTime <= 0 {
 			return ErrInvalidRetryDuration
 		}
 
-		options.retry.strategy = retryStrategyExponential
-		options.retry.exponential.initialInterval = initialInterval
-		options.retry.exponential.maxInterval = maxInterval
-		options.retry.exponential.maxElapsedTime = maxElapsedTime
+		options.retriers.connection.strategy = retryStrategyExponential
+		options.retriers.connection.exponential.initialInterval = initialInterval
+		options.retriers.connection.exponential.maxInterval = maxInterval
+		options.retriers.connection.exponential.maxElapsedTime = maxElapsedTime
+
+		return nil
+	})
+}
+
+// WithExponentialChannelRetry will configure a client with the given exponential
+// channel retry durations.
+func WithExponentialChannelRetry(initialInterval, maxInterval, maxElapsedTime time.Duration) Option {
+	return option(func(options *clientOptions) error {
+		if initialInterval <= 0 || maxInterval <= 0 || maxElapsedTime <= 0 {
+			return ErrInvalidRetryDuration
+		}
+
+		options.retriers.channel.strategy = retryStrategyExponential
+		options.retriers.channel.exponential.initialInterval = initialInterval
+		options.retriers.channel.exponential.maxInterval = maxInterval
+		options.retriers.channel.exponential.maxElapsedTime = maxElapsedTime
 
 		return nil
 	})

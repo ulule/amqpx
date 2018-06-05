@@ -27,7 +27,7 @@ func New(dialer Dialer, options ...Option) (Client, error) {
 		observer: &defaultObserver{},
 		usePool:  true,
 		capacity: DefaultConnectionsCapacity,
-		retry:    retryOptions{},
+		retriers: retriersOptions{},
 	}
 
 	// Applies options.

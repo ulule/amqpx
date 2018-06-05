@@ -16,14 +16,14 @@ type Simple struct {
 	observer   Observer
 	connection *amqp.Connection
 	closed     bool
-	retrier    retrier
+	retriers   *retriers
 }
 
 func newSimple(options *clientOptions) (Client, error) {
 	instance := &Simple{
 		dialer:   options.dialer,
 		observer: options.observer,
-		retrier:  newRetrier(options.retry),
+		retriers: newRetriers(options.retriers),
 	}
 
 	err := instance.newConnection()
@@ -44,7 +44,7 @@ func (e *Simple) Channel() (Channel, error) {
 	}
 
 	// Try to acquire a channel.
-	channel, err := openChannel(e.connection, e.retrier, e.observer)
+	channel, err := openChannel(e.connection, e.retriers.channel, e.observer)
 	if err != nil {
 		return nil, errors.WithStack(ErrOpenChannel)
 	}
@@ -56,7 +56,7 @@ func (e *Simple) Channel() (Channel, error) {
 			return nil, err
 		}
 
-		channel, err = openChannel(e.connection, e.retrier, e.observer)
+		channel, err = openChannel(e.connection, e.retriers.channel, e.observer)
 		if err != nil {
 			return nil, errors.WithStack(ErrOpenChannel)
 		}
