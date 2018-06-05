@@ -64,7 +64,7 @@ func (e *Pooler) newConnection() error {
 	})
 
 	if err != nil {
-		return errors.Wrap(err, ErrExceededRetries.Error())
+		return errors.Wrap(err, ErrRetryExceeded.Error())
 	}
 
 	e.connections = append(e.connections, connection)

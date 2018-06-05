@@ -30,6 +30,6 @@ var (
 	// ErrOpenChannel occurs when a new channel cannot be open.
 	ErrOpenChannel = errors.New("cannot open a new channel")
 
-	// ErrExceededRetries occurs when a retrier exceeded its attempts.
-	ErrExceededRetries = errors.New("exceeded retries")
+	// ErrRetryExceeded occurs when a retrier exceeded its attempts.
+	ErrRetryExceeded = errors.New("retry exceeded")
 )

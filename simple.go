@@ -84,7 +84,7 @@ func (e *Simple) newConnection() error {
 	})
 
 	if err != nil {
-		return errors.Wrap(err, ErrExceededRetries.Error())
+		return errors.Wrap(err, ErrRetryExceeded.Error())
 	}
 
 	e.connection = connection
