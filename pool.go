@@ -130,7 +130,7 @@ func (e *Pooler) Channel() (Channel, error) {
 		e.mutex.RUnlock()
 
 		if closed {
-			return nil, errors.Wrap(ErrClientClosed, "amqpx: cannot open a new channel")
+			return nil, errors.Wrap(ErrClientClosed, ErrOpenChannel.Error())
 		}
 
 		if connection != nil {
@@ -138,7 +138,7 @@ func (e *Pooler) Channel() (Channel, error) {
 		}
 	}
 
-	return nil, errors.Wrap(ErrNoConnectionAvailable, "amqpx: cannot open a new channel")
+	return nil, errors.Wrap(ErrNoConnectionAvailable, ErrOpenChannel.Error())
 }
 
 // IsClosed returns if the pool is closed.

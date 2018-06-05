@@ -43,11 +43,13 @@ func (e *Simple) Channel() (Channel, error) {
 		return nil, errors.Wrap(ErrClientClosed, ErrOpenChannel.Error())
 	}
 
+	// Try to acquire a channel.
 	channel, err := openChannel(e.connection, e.retrier, e.observer)
 	if err != nil {
 		return nil, errors.WithStack(ErrOpenChannel)
 	}
 
+	// If channel is closed, renew the connection and try again.
 	if err == amqp.ErrClosed {
 		err = e.newConnection()
 		if err != nil {
