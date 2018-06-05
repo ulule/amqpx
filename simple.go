@@ -66,16 +66,29 @@ func (e *Simple) Channel() (Channel, error) {
 }
 
 func (e *Simple) newConnection() error {
+	var (
+		err        error
+		connection *amqp.Connection
+	)
+
 	if e.connection != nil {
 		e.close(e.connection)
 	}
 
-	connection, err := e.dialer.dial(0)
+	err = e.retriers.connection.retry(func() error {
+		connection, err = e.dialer.dial(0)
+		if err != nil {
+			return errors.Wrap(err, ErrOpenConnection.Error())
+		}
+		return nil
+	})
+
 	if err != nil {
-		return errors.Wrap(err, ErrOpenConnection.Error())
+		return errors.Wrap(err, ErrExceededRetries.Error())
 	}
 
 	e.connection = connection
+
 	return nil
 }
 

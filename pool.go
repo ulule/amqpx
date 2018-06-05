@@ -49,10 +49,22 @@ func (e *Pooler) newConnection() error {
 	e.mutex.Lock()
 	defer e.mutex.Unlock()
 
-	idx := len(e.connections)
-	connection, err := e.dialer.dial(idx)
+	var (
+		err        error
+		connection *amqp.Connection
+		idx        = len(e.connections)
+	)
+
+	err = e.retriers.connection.retry(func() error {
+		connection, err = e.dialer.dial(idx)
+		if err != nil {
+			return errors.Wrap(err, ErrOpenConnection.Error())
+		}
+		return nil
+	})
+
 	if err != nil {
-		return err
+		return errors.Wrap(err, ErrExceededRetries.Error())
 	}
 
 	e.connections = append(e.connections, connection)
