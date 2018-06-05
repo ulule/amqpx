@@ -11,7 +11,7 @@ import (
 	"github.com/ulule/amqpx"
 )
 
-func TestPoolClient_Client(t *testing.T) {
+func TestPoolClient(t *testing.T) {
 	is := NewRunner(t)
 
 	client, err := NewClient(amqpx.WithCapacity(7))
@@ -19,16 +19,41 @@ func TestPoolClient_Client(t *testing.T) {
 	is.NotNil(client)
 	is.IsType(&amqpx.Pool{}, client)
 
-	pooler := client.(*amqpx.Pool)
-	is.Equal(7, pooler.Length())
+	pool := client.(*amqpx.Pool)
+	is.Equal(7, pool.Length())
 
 	client, err = NewClient()
 	is.NoError(err)
 	is.NotNil(client)
 	is.IsType(&amqpx.Pool{}, client)
 
-	pooler = client.(*amqpx.Pool)
-	is.Equal(amqpx.DefaultConnectionsCapacity, pooler.Length())
+	pool = client.(*amqpx.Pool)
+	is.Equal(amqpx.DefaultConnectionsCapacity, pool.Length())
+}
+
+func TestPoolClient_WithExponentialConnectionRetry(t *testing.T) {
+	var (
+		is              = NewRunner(t)
+		capacity        = 1
+		initialInterval = 10 * time.Millisecond
+		maxInterval     = 20 * time.Millisecond
+		maxElapsedTime  = 100 * time.Millisecond
+	)
+
+	dialer, err := amqpx.SimpleDialer(invalidBrokerURI)
+	is.NoError(err)
+
+	client, err := amqpx.New(
+		dialer,
+		amqpx.WithCapacity(capacity),
+		amqpx.WithExponentialConnectionRetry(
+			initialInterval,
+			maxInterval,
+			maxElapsedTime))
+
+	is.Nil(client)
+	is.NotNil(err)
+	is.Contains(err.Error(), amqpx.ErrRetryExceeded.Error())
 }
 
 func TestPoolClient_Channel(t *testing.T) {
@@ -44,9 +69,7 @@ func TestPoolClient_Channel(t *testing.T) {
 	channel, err := client.Channel()
 	is.NoError(err)
 	is.NotNil(channel)
-
-	err = channel.Close()
-	is.NoError(err)
+	is.NoError(channel.Close())
 }
 
 func TestPoolClient_Close(t *testing.T) {

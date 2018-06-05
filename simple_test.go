@@ -11,7 +11,7 @@ import (
 	"github.com/ulule/amqpx"
 )
 
-func TestSimpleClient_Client(t *testing.T) {
+func TestSimpleClient(t *testing.T) {
 	is := NewRunner(t)
 
 	client, err := NewClient(amqpx.WithoutConnectionsPool())
@@ -20,22 +20,28 @@ func TestSimpleClient_Client(t *testing.T) {
 	is.IsType(&amqpx.Simple{}, client)
 }
 
-func TestSimpleClient_Channel(t *testing.T) {
-	is := NewRunner(t)
+func TestSimpleClient_WithExponentialConnectionRetry(t *testing.T) {
+	var (
+		is              = NewRunner(t)
+		initialInterval = 10 * time.Millisecond
+		maxInterval     = 20 * time.Millisecond
+		maxElapsedTime  = 100 * time.Millisecond
+	)
 
-	client, err := NewClient(amqpx.WithoutConnectionsPool())
+	dialer, err := amqpx.SimpleDialer(invalidBrokerURI)
 	is.NoError(err)
-	is.NotNil(client)
-	defer func() {
-		is.NoError(client.Close())
-	}()
 
-	channel, err := client.Channel()
-	is.NoError(err)
-	is.NotNil(channel)
+	client, err := amqpx.New(
+		dialer,
+		amqpx.WithoutConnectionsPool(),
+		amqpx.WithExponentialConnectionRetry(
+			initialInterval,
+			maxInterval,
+			maxElapsedTime))
 
-	err = channel.Close()
-	is.NoError(err)
+	is.Nil(client)
+	is.NotNil(err)
+	is.Contains(err.Error(), amqpx.ErrRetryExceeded.Error())
 }
 
 func TestSimpleClient_Close(t *testing.T) {

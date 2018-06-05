@@ -13,8 +13,9 @@ import (
 )
 
 var (
-	brokerURI  = "amqp://guest:guest@127.0.0.1:5672/amqpx"
-	brokerURIs = []string{
+	invalidBrokerURI = "amqp://lionel:richie@127.0.0.1:5000/amqpx"
+	brokerURI        = "amqp://guest:guest@127.0.0.1:5672/amqpx"
+	brokerURIs       = []string{
 		"amqp://guest:guest@127.0.0.1:5672/amqpx",
 		"amqp://guest:guest@127.0.0.1:5673/amqpx",
 		"amqp://guest:guest@127.0.0.1:5674/amqpx",
@@ -101,6 +102,12 @@ func (e *Runner) False(value bool, msgAndArgs ...interface{}) {
 	e.mutex.Lock()
 	defer e.mutex.Unlock()
 	e.require.False(value, msgAndArgs...)
+}
+
+func (e *Runner) Contains(s interface{}, contains interface{}, msgAndArgs ...interface{}) {
+	e.mutex.Lock()
+	defer e.mutex.Unlock()
+	e.require.Contains(s, contains, msgAndArgs...)
 }
 
 func TestClusterMode(t *testing.T) {
