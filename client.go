@@ -42,5 +42,5 @@ func New(dialer Dialer, options ...Option) (Client, error) {
 		return newSimple(opts)
 	}
 
-	return newConnectionsPool(opts)
+	return newPool(opts)
 }
