@@ -1,6 +1,9 @@
 package amqpx
 
-import "github.com/streadway/amqp"
+import (
+	"github.com/pkg/errors"
+	"github.com/streadway/amqp"
+)
 
 // Channel represents an amqp channel.
 type Channel interface {
@@ -115,6 +118,33 @@ func (ch *channelWrapper) Publish(
 			immediate,
 			msg)
 	})
+}
+
+func openChannel(conn *amqp.Connection, retry retrier, obs Observer) (Channel, error) {
+	var (
+		err error
+		ch  *amqp.Channel
+	)
+
+	err = retry.retry(func() error {
+		ch, err = conn.Channel()
+		if err != nil && err != amqp.ErrClosed {
+			if ch != nil {
+				err := ch.Close()
+				if err != nil {
+					obs.OnClose(err)
+				}
+			}
+			return errors.Wrap(err, ErrOpenChannel.Error())
+		}
+		return nil
+	})
+
+	if err != nil {
+		return nil, errors.Wrap(err, "exceeded retries to open connection channel")
+	}
+
+	return newChannel(ch, retry), nil
 }
 
 var _ Channel = (*channelWrapper)(nil)

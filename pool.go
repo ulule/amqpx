@@ -75,7 +75,6 @@ func (e *Pooler) listenOnCloseConnection(idx int, connection *amqp.Connection) {
 	connection.NotifyClose(receiver)
 
 	go func() {
-
 		err := <-receiver
 		if err != nil {
 			e.observer.OnClose(err)
@@ -83,7 +82,6 @@ func (e *Pooler) listenOnCloseConnection(idx int, connection *amqp.Connection) {
 
 		e.releaseConnection(idx)
 		e.retryConnection(idx)
-
 	}()
 }
 
@@ -91,7 +89,6 @@ func (e *Pooler) listenOnCloseConnection(idx int, connection *amqp.Connection) {
 // If it succeed, it will add this connection on the connections pool.
 func (e *Pooler) retryConnection(idx int) {
 	for {
-
 		e.mutex.RLock()
 		closed := e.closed
 		e.mutex.RUnlock()
@@ -104,12 +101,10 @@ func (e *Pooler) retryConnection(idx int) {
 		// Try to open a new connection.
 		connection, err := e.dialer.dial(idx)
 		if err == nil {
-
 			e.mutex.Lock()
 			e.connections[idx] = connection
 			e.listenOnCloseConnection(idx, connection)
 			e.mutex.Unlock()
-
 			return
 		}
 
@@ -127,7 +122,6 @@ func (e *Pooler) Channel() (Channel, error) {
 	e.mutex.RUnlock()
 
 	for i := 0; i < capacity; i++ {
-
 		idx := (i + offset) % capacity
 
 		e.mutex.RLock()
@@ -140,11 +134,7 @@ func (e *Pooler) Channel() (Channel, error) {
 		}
 
 		if connection != nil {
-			ch, err := connection.Channel()
-			channel := newChannel(ch, e.retrier)
-			if err == nil {
-				return channel, nil
-			}
+			return openChannel(connection, e.retrier, e.observer)
 		}
 	}
 

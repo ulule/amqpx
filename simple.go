@@ -43,21 +43,18 @@ func (e *Simple) Channel() (Channel, error) {
 		return nil, errors.Wrap(ErrClientClosed, ErrOpenChannel.Error())
 	}
 
-	// Try to get a channel.
-	channel, err := e.getChannel(e.connection)
+	channel, err := openChannel(e.connection, e.retrier, e.observer)
 	if err != nil {
 		return nil, errors.WithStack(ErrOpenChannel)
 	}
 
-	// If connection is closed...
 	if err == amqp.ErrClosed {
-		// Try to open a new one.
 		err = e.newConnection()
 		if err != nil {
 			return nil, err
 		}
 
-		channel, err = e.getChannel(e.connection)
+		channel, err = openChannel(e.connection, e.retrier, e.observer)
 		if err != nil {
 			return nil, errors.WithStack(ErrOpenChannel)
 		}
@@ -100,26 +97,6 @@ func (e *Simple) close(connection io.Closer) {
 	if err != nil {
 		e.observer.OnClose(err)
 	}
-}
-
-func (e *Simple) getChannel(conn *amqp.Connection) (Channel, error) {
-	var (
-		err error
-		ch  *amqp.Channel
-	)
-
-	err = e.retrier.retry(func() error {
-		ch, err = conn.Channel()
-		if err != nil && err != amqp.ErrClosed {
-			if ch != nil {
-				e.close(ch)
-			}
-			return errors.Wrap(err, ErrOpenChannel.Error())
-		}
-		return nil
-	})
-
-	return newChannel(ch, e.retrier), nil
 }
 
 var _ Client = (*Simple)(nil)
