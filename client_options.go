@@ -21,20 +21,6 @@ type clientOptions struct {
 	retriers retriersOptions
 }
 
-type retrierOptions struct {
-	strategy    retryStrategy
-	exponential struct {
-		initialInterval time.Duration
-		maxInterval     time.Duration
-		maxElapsedTime  time.Duration
-	}
-}
-
-type retriersOptions struct {
-	connection retrierOptions
-	channel    retrierOptions
-}
-
 // WithCapacity will configure a Client with the given number of connections.
 func WithCapacity(capacity int) ClientOption {
 	return clientOption(func(options *clientOptions) error {
