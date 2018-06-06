@@ -12,12 +12,15 @@ jobs:
           command: |
             git submodule sync
             git submodule update --init
+
       - run:
-          name: Run RabbitMQ
+          name: Start docker container for RabbitMQ
           command: scripts/rabbitmq
+
       - run:
           name: Run tests
           command: scripts/go-wrapper test
+
       - run:
           name: Run linter
           command: scripts/go-wrapper lint
