@@ -20,7 +20,7 @@ type Client interface {
 }
 
 // New returns a new client using given configuration.
-func New(dialer Dialer, options ...Option) (Client, error) {
+func New(dialer Dialer, options ...ClientOption) (Client, error) {
 	// Default client options.
 	opts := &clientOptions{
 		dialer:   dialer,

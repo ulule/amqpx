@@ -2,14 +2,14 @@ package amqpx
 
 import "time"
 
-// Option is used to define client configuration.
-type Option interface {
+// ClientOption is used to define client configuration.
+type ClientOption interface {
 	apply(*clientOptions) error
 }
 
-type option func(*clientOptions) error
+type clientOption func(*clientOptions) error
 
-func (o option) apply(instance *clientOptions) error {
+func (o clientOption) apply(instance *clientOptions) error {
 	return o(instance)
 }
 
@@ -36,8 +36,8 @@ type retriersOptions struct {
 }
 
 // WithCapacity will configure a client with a connections pool and given capacity.
-func WithCapacity(capacity int) Option {
-	return option(func(options *clientOptions) error {
+func WithCapacity(capacity int) ClientOption {
+	return clientOption(func(options *clientOptions) error {
 		if capacity <= 0 {
 			return ErrInvalidConnectionsPoolCapacity
 		}
@@ -49,16 +49,16 @@ func WithCapacity(capacity int) Option {
 }
 
 // WithoutConnectionsPool will configure a client without a connections pool.
-func WithoutConnectionsPool() Option {
-	return option(func(options *clientOptions) error {
+func WithoutConnectionsPool() ClientOption {
+	return clientOption(func(options *clientOptions) error {
 		options.usePool = false
 		return nil
 	})
 }
 
 // WithObserver will configure client with given observer.
-func WithObserver(observer Observer) Option {
-	return option(func(options *clientOptions) error {
+func WithObserver(observer Observer) ClientOption {
+	return clientOption(func(options *clientOptions) error {
 		if observer == nil {
 			return ErrObserverRequired
 		}
@@ -70,8 +70,8 @@ func WithObserver(observer Observer) Option {
 
 // WithExponentialConnectionRetry will configure a client with the given exponential
 // connection retry durations.
-func WithExponentialConnectionRetry(initialInterval, maxInterval, maxElapsedTime time.Duration) Option {
-	return option(func(options *clientOptions) error {
+func WithExponentialConnectionRetry(initialInterval, maxInterval, maxElapsedTime time.Duration) ClientOption {
+	return clientOption(func(options *clientOptions) error {
 		if initialInterval <= 0 || maxInterval <= 0 || maxElapsedTime <= 0 {
 			return ErrInvalidRetryDuration
 		}
@@ -87,8 +87,8 @@ func WithExponentialConnectionRetry(initialInterval, maxInterval, maxElapsedTime
 
 // WithExponentialChannelRetry will configure a client with the given exponential
 // channel retry durations.
-func WithExponentialChannelRetry(initialInterval, maxInterval, maxElapsedTime time.Duration) Option {
-	return option(func(options *clientOptions) error {
+func WithExponentialChannelRetry(initialInterval, maxInterval, maxElapsedTime time.Duration) ClientOption {
+	return clientOption(func(options *clientOptions) error {
 		if initialInterval <= 0 || maxInterval <= 0 || maxElapsedTime <= 0 {
 			return ErrInvalidRetryDuration
 		}
