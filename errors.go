@@ -1,7 +1,6 @@
 package amqpx
 
 import (
-	"errors"
 	"fmt"
 )
 
@@ -25,13 +24,13 @@ var (
 	ErrInvalidRetryDuration = fmt.Errorf("invalid retry duration")
 
 	// ErrOpenConnection occurs when a new connection cannot be open.
-	ErrOpenConnection = errors.New("cannot open a new connection")
+	ErrOpenConnection = fmt.Errorf("cannot open a new connection")
 
 	// ErrOpenChannel occurs when a new channel cannot be open.
-	ErrOpenChannel = errors.New("cannot open a new channel")
+	ErrOpenChannel = fmt.Errorf("cannot open a new channel")
 
 	// ErrRetryExceeded occurs when a retrier exceeded its attempts.
-	ErrRetryExceeded = errors.New("retry exceeded")
+	ErrRetryExceeded = fmt.Errorf("retry exceeded")
 
 	// ErrInvalidDialerTimeout occurs when the defined dialer timeout is invalid.
 	ErrInvalidDialerTimeout = fmt.Errorf("invalid dialer timeout")
