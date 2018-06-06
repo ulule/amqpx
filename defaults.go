@@ -4,15 +4,15 @@ import "time"
 
 // Retry
 const (
-	defaultRetryInitialInterval = 100 * time.Millisecond
-	defaultRetryMaxInterval     = 32 * time.Second
-	defaultRetryMaxElapsedTime  = 7 * time.Minute
+	DefaultRetryInitialInterval = 100 * time.Millisecond
+	DefaultRetryMaxInterval     = 32 * time.Second
+	DefaultRetryMaxElapsedTime  = 7 * time.Minute
 )
 
 // Dialer
 var (
-	defaultDialerTimeout   = 30 * time.Second
-	defaultDialerHeartbeat = 10 * time.Second
+	DefaultDialerTimeout   = 30 * time.Second
+	DefaultDialerHeartbeat = 10 * time.Second
 )
 
 // Pooler
