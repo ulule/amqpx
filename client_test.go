@@ -25,6 +25,8 @@ var (
 const (
 	concurrentAccessNChannels = 2000
 	sigkillSleep              = 2 * time.Second
+	dialerTimeout             = 15 * time.Second
+	dialerHeartbeat           = 15 * time.Second
 )
 
 func IsClusterMode() bool {
