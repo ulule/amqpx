@@ -5,7 +5,7 @@ import (
 	"github.com/streadway/amqp"
 )
 
-// Channel represents an amqp channel.
+// Channel describes an amqp channel.
 type Channel interface {
 	Close() error
 	NotifyClose(c chan *Error) chan *Error

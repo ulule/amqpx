@@ -25,7 +25,7 @@ func newDialerOptions() dialerOptions {
 	}
 }
 
-// WithDialerTimeout will configure a dialer with the given timeout duration.
+// WithDialerTimeout will configure a Dialer with the given timeout duration.
 func WithDialerTimeout(timeout time.Duration) DialerOption {
 	return dialerOption(func(options *dialerOptions) error {
 		if timeout <= 0 {
@@ -36,7 +36,7 @@ func WithDialerTimeout(timeout time.Duration) DialerOption {
 	})
 }
 
-// WithDialerHeartbeat will configure a dialer with the given heartbeat duration.
+// WithDialerHeartbeat will configure a Dialer with the given heartbeat duration.
 func WithDialerHeartbeat(heartbeat time.Duration) DialerOption {
 	return dialerOption(func(options *dialerOptions) error {
 		if heartbeat <= 0 {

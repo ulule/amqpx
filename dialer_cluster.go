@@ -7,7 +7,7 @@ import (
 	"github.com/streadway/amqp"
 )
 
-// ClusterDialer is a Dialer that use a cluster of broker.
+// ClusterDialer is a Dialer that uses a cluster of broker.
 func ClusterDialer(list []string, options ...DialerOption) (Dialer, error) {
 	if len(list) == 0 {
 		return nil, errors.Wrap(ErrBrokerURIRequired, ErrNewDialer.Error())

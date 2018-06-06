@@ -7,7 +7,7 @@ import (
 	"github.com/streadway/amqp"
 )
 
-// Dialer is an interface that return a new amqp connection.
+// Dialer is an interface that returns a new amqp connection.
 // In order to instantiate a new Dialer, please use SimpleDialer or ClusterDialer.
 type Dialer interface {
 	Timeout() time.Duration

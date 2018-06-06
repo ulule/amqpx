@@ -1,13 +1,13 @@
 // Package amqpx provides extensions for Go AMQP library.
 //
-// It use https://github.com/streadway/amqp as dependency.
+// It uses https://github.com/streadway/amqp as dependency.
 package amqpx
 
 import (
 	"github.com/pkg/errors"
 )
 
-// Client interface describe a amqp client.
+// Client interface describes a amqp client.
 type Client interface {
 	// Channel returns a new amqp's channel from current client unless it's closed.
 	Channel() (Channel, error)
@@ -19,9 +19,8 @@ type Client interface {
 	IsClosed() bool
 }
 
-// New returns a new client using given configuration.
+// New returns a new Client with the given Dialer and options.
 func New(dialer Dialer, options ...ClientOption) (Client, error) {
-	// Default client options.
 	opts := &clientOptions{
 		dialer:   dialer,
 		observer: &defaultObserver{},
@@ -30,7 +29,6 @@ func New(dialer Dialer, options ...ClientOption) (Client, error) {
 		retriers: retriersOptions{},
 	}
 
-	// Applies options.
 	for _, option := range options {
 		err := option.apply(opts)
 		if err != nil {

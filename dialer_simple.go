@@ -7,7 +7,7 @@ import (
 	"github.com/streadway/amqp"
 )
 
-// SimpleDialer gives a Dialer that use a simple broker.
+// SimpleDialer gives a Dialer that uses a simple broker.
 func SimpleDialer(uri string, options ...DialerOption) (Dialer, error) {
 	if uri == "" {
 		return nil, errors.Wrap(ErrBrokerURIRequired, ErrNewDialer.Error())
