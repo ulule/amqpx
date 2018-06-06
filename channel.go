@@ -130,7 +130,7 @@ func openChannel(conn *amqp.Connection, retry retrier, obs Observer) (Channel, e
 		ch, err = conn.Channel()
 		if err != nil && err != amqp.ErrClosed {
 			if ch != nil {
-				err := ch.Close()
+				err = ch.Close()
 				if err != nil {
 					obs.OnClose(err)
 				}
