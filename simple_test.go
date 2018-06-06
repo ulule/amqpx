@@ -41,7 +41,7 @@ func TestSimpleClient_WithExponentialConnectionRetry(t *testing.T) {
 
 	is.Nil(client)
 	is.NotNil(err)
-	is.Contains(err.Error(), amqpx.ErrRetryExceeded.Error())
+	is.Contains(err.Error(), amqpx.ErrMessageRetryExceeded)
 }
 
 func TestSimpleClient_Close(t *testing.T) {

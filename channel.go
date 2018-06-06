@@ -135,13 +135,13 @@ func openChannel(conn *amqp.Connection, retry retrier, obs Observer) (Channel, e
 					obs.OnClose(err)
 				}
 			}
-			return errors.Wrap(err, ErrOpenChannel.Error())
+			return errors.Wrap(err, ErrMessageCannotOpenChannel)
 		}
 		return nil
 	})
 
 	if err != nil {
-		return nil, errors.Wrap(err, ErrRetryExceeded.Error())
+		return nil, errors.Wrap(err, ErrMessageRetryExceeded)
 	}
 
 	return newChannel(ch, retry), nil

@@ -40,13 +40,13 @@ func (e *Simple) Channel() (Channel, error) {
 	defer e.mutex.Unlock()
 
 	if e.closed {
-		return nil, errors.Wrap(ErrClientClosed, ErrOpenChannel.Error())
+		return nil, errors.Wrap(ErrClientClosed, ErrMessageCannotOpenChannel)
 	}
 
 	// Try to acquire a channel.
 	channel, err := openChannel(e.connection, e.retriers.channel, e.observer)
 	if err != nil {
-		return nil, errors.Wrap(err, ErrOpenChannel.Error())
+		return nil, errors.Wrap(err, ErrMessageCannotOpenChannel)
 	}
 
 	// If channel is closed, renew the connection and try again.
@@ -58,7 +58,7 @@ func (e *Simple) Channel() (Channel, error) {
 
 		channel, err = openChannel(e.connection, e.retriers.channel, e.observer)
 		if err != nil {
-			return nil, errors.Wrap(err, ErrOpenChannel.Error())
+			return nil, errors.Wrap(err, ErrMessageCannotOpenChannel)
 		}
 	}
 
@@ -78,13 +78,13 @@ func (e *Simple) newConnection() error {
 	err = e.retriers.connection.retry(func() error {
 		connection, err = e.dialer.dial(0)
 		if err != nil {
-			return errors.Wrap(err, ErrOpenConnection.Error())
+			return errors.Wrap(err, ErrMessageCannotOpenConnection)
 		}
 		return nil
 	})
 
 	if err != nil {
-		return errors.Wrap(err, ErrRetryExceeded.Error())
+		return errors.Wrap(err, ErrMessageRetryExceeded)
 	}
 
 	e.connection = connection

@@ -10,14 +10,14 @@ import (
 // SimpleDialer gives a Dialer that uses a simple broker.
 func SimpleDialer(uri string, options ...DialerOption) (Dialer, error) {
 	if uri == "" {
-		return nil, errors.Wrap(ErrBrokerURIRequired, ErrNewDialer.Error())
+		return nil, errors.Wrap(ErrBrokerURIRequired, ErrMessageCannotCreateDialer)
 	}
 
 	opts := newDialerOptions()
 	for _, option := range options {
 		err := option.apply(&opts)
 		if err != nil {
-			return nil, errors.Wrap(err, ErrNewDialer.Error())
+			return nil, errors.Wrap(err, ErrMessageCannotCreateDialer)
 		}
 	}
 

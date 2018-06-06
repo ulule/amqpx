@@ -8,6 +8,15 @@ var (
 	// ErrInvalidConnectionsPoolCapacity occurs when the defined connections pool's capacity is invalid .
 	ErrInvalidConnectionsPoolCapacity = fmt.Errorf("invalid connections pool capacity")
 
+	// ErrInvalidRetryDuration occurs when the defined retry duration is invalid .
+	ErrInvalidRetryDuration = fmt.Errorf("invalid retry duration")
+
+	// ErrInvalidDialerTimeout occurs when the defined dialer timeout is invalid.
+	ErrInvalidDialerTimeout = fmt.Errorf("invalid dialer timeout")
+
+	// ErrInvalidDialerHeartbeat occurs when the defined dialer heartbeat is invalid.
+	ErrInvalidDialerHeartbeat = fmt.Errorf("invalid dialer heartbeat")
+
 	// ErrNoConnectionAvailable occurs when the connections pool's has no healthy connections.
 	ErrNoConnectionAvailable = fmt.Errorf("no connection available")
 
@@ -19,28 +28,13 @@ var (
 
 	// ErrObserverRequired occurs when given observer is empty.
 	ErrObserverRequired = fmt.Errorf("an observer instance is required")
+)
 
-	// ErrInvalidRetryDuration occurs when the defined retry duration is invalid .
-	ErrInvalidRetryDuration = fmt.Errorf("invalid retry duration")
-
-	// ErrOpenConnection occurs when a new connection cannot be open.
-	ErrOpenConnection = fmt.Errorf("cannot open a new connection")
-
-	// ErrOpenChannel occurs when a new channel cannot be open.
-	ErrOpenChannel = fmt.Errorf("cannot open a new channel")
-
-	// ErrRetryExceeded occurs when a retrier exceeded its attempts.
-	ErrRetryExceeded = fmt.Errorf("retry exceeded")
-
-	// ErrInvalidDialerTimeout occurs when the defined dialer timeout is invalid.
-	ErrInvalidDialerTimeout = fmt.Errorf("invalid dialer timeout")
-
-	// ErrInvalidDialerHeartbeat occurs when the defined dialer heartbeat is invalid.
-	ErrInvalidDialerHeartbeat = fmt.Errorf("invalid dialer heartbeat")
-
-	// ErrNewDialer occurs when a dialer cannot be created.
-	ErrNewDialer = fmt.Errorf("cannot create a new dialer")
-
-	// ErrNewClient occurs when a client cannot be created.
-	ErrNewClient = fmt.Errorf("cannot create a new client")
+// Error Messages
+const (
+	ErrMessageCannotCreateDialer   = "cannot create a new dialer"
+	ErrMessageCannotCreateClient   = "cannot create a new client"
+	ErrMessageCannotOpenChannel    = "cannot open a new channel"
+	ErrMessageCannotOpenConnection = "cannot open a new connection"
+	ErrMessageRetryExceeded        = "retry exceeded"
 )

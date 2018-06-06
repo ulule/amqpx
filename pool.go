@@ -58,13 +58,13 @@ func (e *Pool) newConnection() error {
 	err = e.retriers.connection.retry(func() error {
 		connection, err = e.dialer.dial(idx)
 		if err != nil {
-			return errors.Wrap(err, ErrOpenConnection.Error())
+			return errors.Wrap(err, ErrMessageCannotOpenConnection)
 		}
 		return nil
 	})
 
 	if err != nil {
-		return errors.Wrap(err, ErrRetryExceeded.Error())
+		return errors.Wrap(err, ErrMessageRetryExceeded)
 	}
 
 	e.connections = append(e.connections, connection)
@@ -142,7 +142,7 @@ func (e *Pool) Channel() (Channel, error) {
 		e.mutex.RUnlock()
 
 		if closed {
-			return nil, errors.Wrap(ErrClientClosed, ErrOpenChannel.Error())
+			return nil, errors.Wrap(ErrClientClosed, ErrMessageCannotOpenChannel)
 		}
 
 		if connection != nil {
@@ -150,7 +150,7 @@ func (e *Pool) Channel() (Channel, error) {
 		}
 	}
 
-	return nil, errors.Wrap(ErrNoConnectionAvailable, ErrOpenChannel.Error())
+	return nil, errors.Wrap(ErrNoConnectionAvailable, ErrMessageCannotOpenChannel)
 }
 
 // IsClosed returns if the pool is closed.

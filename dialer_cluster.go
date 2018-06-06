@@ -10,14 +10,14 @@ import (
 // ClusterDialer is a Dialer that uses a cluster of broker.
 func ClusterDialer(list []string, options ...DialerOption) (Dialer, error) {
 	if len(list) == 0 {
-		return nil, errors.Wrap(ErrBrokerURIRequired, ErrNewDialer.Error())
+		return nil, errors.Wrap(ErrBrokerURIRequired, ErrMessageCannotCreateDialer)
 	}
 
 	opts := newDialerOptions()
 	for _, option := range options {
 		err := option.apply(&opts)
 		if err != nil {
-			return nil, errors.Wrap(err, ErrNewDialer.Error())
+			return nil, errors.Wrap(err, ErrMessageCannotCreateDialer)
 		}
 	}
 
