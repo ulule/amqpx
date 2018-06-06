@@ -11,19 +11,19 @@ import (
 // Simple implements the Client interface without a connections pool.
 // It will use a single connection for multiple channel.
 type Simple struct {
-	mutex      sync.RWMutex
-	dialer     Dialer
-	observer   Observer
-	connection *amqp.Connection
-	closed     bool
-	retriers   *retriers
+	mutex        sync.RWMutex
+	dialer       Dialer
+	observer     Observer
+	connection   *amqp.Connection
+	closed       bool
+	retryOptions retriersOptions
 }
 
 func newSimple(options *clientOptions) (Client, error) {
 	instance := &Simple{
-		dialer:   options.dialer,
-		observer: options.observer,
-		retriers: newRetriers(options.retriers),
+		dialer:       options.dialer,
+		observer:     options.observer,
+		retryOptions: options.retriers,
 	}
 
 	err := instance.newConnection()
@@ -44,7 +44,7 @@ func (e *Simple) Channel() (Channel, error) {
 	}
 
 	// Try to acquire a channel.
-	channel, err := openChannel(e.connection, e.retriers.channel, e.observer)
+	channel, err := openChannel(e.connection, e.retryOptions.channel, e.observer)
 	if err != nil {
 		return nil, errors.Wrap(err, ErrMessageCannotOpenChannel)
 	}
@@ -56,7 +56,7 @@ func (e *Simple) Channel() (Channel, error) {
 			return nil, err
 		}
 
-		channel, err = openChannel(e.connection, e.retriers.channel, e.observer)
+		channel, err = openChannel(e.connection, e.retryOptions.channel, e.observer)
 		if err != nil {
 			return nil, errors.Wrap(err, ErrMessageCannotOpenChannel)
 		}
@@ -69,13 +69,14 @@ func (e *Simple) newConnection() error {
 	var (
 		err        error
 		connection *amqp.Connection
+		retry      = newRetrier(e.retryOptions.connection)
 	)
 
 	if e.connection != nil {
 		e.close(e.connection)
 	}
 
-	err = e.retriers.connection.retry(func() error {
+	err = retry.retry(func() error {
 		connection, err = e.dialer.dial(0)
 		if err != nil {
 			return errors.Wrap(err, ErrMessageCannotOpenConnection)

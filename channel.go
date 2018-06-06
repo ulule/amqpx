@@ -120,10 +120,11 @@ func (ch *channelWrapper) Publish(
 	})
 }
 
-func openChannel(conn *amqp.Connection, retry retrier, obs Observer) (Channel, error) {
+func openChannel(conn *amqp.Connection, retryOpts retrierOptions, obs Observer) (Channel, error) {
 	var (
-		err error
-		ch  *amqp.Channel
+		err   error
+		ch    *amqp.Channel
+		retry = newRetrier(retryOpts)
 	)
 
 	err = retry.retry(func() error {

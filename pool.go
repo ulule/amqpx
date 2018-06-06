@@ -13,21 +13,21 @@ import (
 // Pool implements the Client interface using a connections pool.
 // It will reuse a healthy connection from pool when a channel is requested.
 type Pool struct {
-	mutex       sync.RWMutex
-	dialer      Dialer
-	observer    Observer
-	connections []*amqp.Connection
-	closed      bool
-	retriers    *retriers
+	mutex        sync.RWMutex
+	dialer       Dialer
+	observer     Observer
+	connections  []*amqp.Connection
+	closed       bool
+	retryOptions retriersOptions
 }
 
 // newPool returns a new client which use a connections pool for amqp's channel.
 func newPool(options *clientOptions) (Client, error) {
 	// Default channel pool.
 	instance := &Pool{
-		dialer:   options.dialer,
-		observer: options.observer,
-		retriers: newRetriers(options.retriers),
+		dialer:       options.dialer,
+		observer:     options.observer,
+		retryOptions: options.retriers,
 	}
 
 	// Create connections pool.
@@ -53,9 +53,10 @@ func (e *Pool) newConnection() error {
 		err        error
 		connection *amqp.Connection
 		idx        = len(e.connections)
+		retry      = newRetrier(e.retryOptions.connection)
 	)
 
-	err = e.retriers.connection.retry(func() error {
+	err = retry.retry(func() error {
 		connection, err = e.dialer.dial(idx)
 		if err != nil {
 			return errors.Wrap(err, ErrMessageCannotOpenConnection)
@@ -146,7 +147,7 @@ func (e *Pool) Channel() (Channel, error) {
 		}
 
 		if connection != nil {
-			return openChannel(connection, e.retriers.channel, e.observer)
+			return openChannel(connection, e.retryOptions.channel, e.observer)
 		}
 	}
 
