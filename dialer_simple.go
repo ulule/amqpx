@@ -1,33 +1,58 @@
 package amqpx
 
 import (
+	"time"
+
 	"github.com/pkg/errors"
 	"github.com/streadway/amqp"
 )
 
 // SimpleDialer gives a Dialer that use a simple broker.
-func SimpleDialer(uri string, options ...DialerOptions) (Dialer, error) {
+func SimpleDialer(uri string, options ...DialerOption) (Dialer, error) {
 	if uri == "" {
 		return nil, errors.Wrap(
 			ErrBrokerURIRequired,
 			"amqpx: cannot create a new dialer")
 	}
 
+	opts := newDialerOptions()
+	for _, option := range options {
+		err := option.apply(&opts)
+		if err != nil {
+			return nil, errors.Wrap(err, "amqpx: cannot create a new dialer")
+		}
+	}
+
 	return &simpleDialer{
-		DialerOptions: NewDialerOptions(options...),
+		dialerOptions: opts,
 		uri:           uri,
 	}, nil
 }
 
 type simpleDialer struct {
-	DialerOptions
+	dialerOptions
 	uri string
 }
 
-func (e *simpleDialer) dial(id int) (*amqp.Connection, error) {
+// Timeout implements Dialer interface.
+func (e simpleDialer) Timeout() time.Duration {
+	return e.timeout
+}
+
+// Heartbeat implements Dialer interface.
+func (e simpleDialer) Heartbeat() time.Duration {
+	return e.heartbeat
+}
+
+// URLs implements Dialer interface.
+func (e simpleDialer) URLs() []string {
+	return []string{e.uri}
+}
+
+func (e simpleDialer) dial(id int) (*amqp.Connection, error) {
 	return amqp.DialConfig(e.uri, amqp.Config{
-		Dial:      dialer(e.Timeout),
-		Heartbeat: e.Heartbeat,
+		Dial:      dialer(e.timeout),
+		Heartbeat: e.heartbeat,
 	})
 }
 
