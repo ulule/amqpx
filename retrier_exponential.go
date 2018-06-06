@@ -10,9 +10,9 @@ type exponentialRetrier struct {
 
 func newExponentialRetrier(opts retrierOptions) retrier {
 	bo := backoff.NewExponentialBackOff()
-	bo.InitialInterval = defaultRetryInitialInterval
-	bo.MaxInterval = defaultRetryMaxInterval
-	bo.MaxElapsedTime = defaultRetryMaxElapsedTime
+	bo.InitialInterval = DefaultRetryInitialInterval
+	bo.MaxInterval = DefaultRetryMaxInterval
+	bo.MaxElapsedTime = DefaultRetryMaxElapsedTime
 
 	if opts.exponential.initialInterval != 0 {
 		bo.InitialInterval = opts.exponential.initialInterval
