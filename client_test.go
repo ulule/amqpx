@@ -38,7 +38,7 @@ func IsClusterMode() bool {
 	}
 }
 
-func NewClient(options ...amqpx.Option) (amqpx.Client, error) {
+func NewClient(options ...amqpx.ClientOption) (amqpx.Client, error) {
 	dialer, err := amqpx.SimpleDialer(brokerURI)
 	if err != nil {
 		return nil, err
