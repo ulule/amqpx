@@ -10,16 +10,14 @@ import (
 // SimpleDialer gives a Dialer that use a simple broker.
 func SimpleDialer(uri string, options ...DialerOption) (Dialer, error) {
 	if uri == "" {
-		return nil, errors.Wrap(
-			ErrBrokerURIRequired,
-			"amqpx: cannot create a new dialer")
+		return nil, errors.Wrap(ErrBrokerURIRequired, ErrNewDialer.Error())
 	}
 
 	opts := newDialerOptions()
 	for _, option := range options {
 		err := option.apply(&opts)
 		if err != nil {
-			return nil, errors.Wrap(err, "amqpx: cannot create a new dialer")
+			return nil, errors.Wrap(err, ErrNewDialer.Error())
 		}
 	}
 

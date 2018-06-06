@@ -34,7 +34,7 @@ func New(dialer Dialer, options ...ClientOption) (Client, error) {
 	for _, option := range options {
 		err := option.apply(opts)
 		if err != nil {
-			return nil, errors.Wrap(err, "amqpx: cannot create a new client")
+			return nil, errors.Wrap(err, ErrNewClient.Error())
 		}
 	}
 

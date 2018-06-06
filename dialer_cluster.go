@@ -10,16 +10,14 @@ import (
 // ClusterDialer is a Dialer that use a cluster of broker.
 func ClusterDialer(list []string, options ...DialerOption) (Dialer, error) {
 	if len(list) == 0 {
-		return nil, errors.Wrap(
-			ErrBrokerURIRequired,
-			"amqpx: cannot create a new dialer")
+		return nil, errors.Wrap(ErrBrokerURIRequired, ErrNewDialer.Error())
 	}
 
 	opts := newDialerOptions()
 	for _, option := range options {
 		err := option.apply(&opts)
 		if err != nil {
-			return nil, errors.Wrap(err, "amqpx: cannot create a new dialer")
+			return nil, errors.Wrap(err, ErrNewDialer.Error())
 		}
 	}
 

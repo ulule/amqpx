@@ -38,4 +38,10 @@ var (
 
 	// ErrInvalidDialerHeartbeat occurs when the defined dialer heartbeat is invalid.
 	ErrInvalidDialerHeartbeat = fmt.Errorf("invalid dialer heartbeat")
+
+	// ErrNewDialer occurs when a dialer cannot be created.
+	ErrNewDialer = fmt.Errorf("cannot create a new dialer")
+
+	// ErrNewClient occurs when a client cannot be created.
+	ErrNewClient = fmt.Errorf("cannot create a new client")
 )

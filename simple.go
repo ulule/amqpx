@@ -46,7 +46,7 @@ func (e *Simple) Channel() (Channel, error) {
 	// Try to acquire a channel.
 	channel, err := openChannel(e.connection, e.retriers.channel, e.observer)
 	if err != nil {
-		return nil, errors.WithStack(ErrOpenChannel)
+		return nil, errors.Wrap(err, ErrOpenChannel.Error())
 	}
 
 	// If channel is closed, renew the connection and try again.
@@ -58,7 +58,7 @@ func (e *Simple) Channel() (Channel, error) {
 
 		channel, err = openChannel(e.connection, e.retriers.channel, e.observer)
 		if err != nil {
-			return nil, errors.WithStack(ErrOpenChannel)
+			return nil, errors.Wrap(err, ErrOpenChannel.Error())
 		}
 	}
 
