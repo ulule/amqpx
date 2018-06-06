@@ -32,4 +32,10 @@ var (
 
 	// ErrRetryExceeded occurs when a retrier exceeded its attempts.
 	ErrRetryExceeded = errors.New("retry exceeded")
+
+	// ErrInvalidDialerTimeout occurs when the defined dialer timeout is invalid.
+	ErrInvalidDialerTimeout = fmt.Errorf("invalid dialer timeout")
+
+	// ErrInvalidDialerHeartbeat occurs when the defined dialer heartbeat is invalid.
+	ErrInvalidDialerHeartbeat = fmt.Errorf("invalid dialer heartbeat")
 )
