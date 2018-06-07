@@ -36,15 +36,3 @@ func newRetrier(opts retrierOptions) retrier {
 		return newNoopRetrier()
 	}
 }
-
-type retriers struct {
-	connection retrier
-	channel    retrier
-}
-
-func newRetriers(opts retriersOptions) *retriers {
-	return &retriers{
-		connection: newRetrier(opts.connection),
-		channel:    newRetrier(opts.channel),
-	}
-}

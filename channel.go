@@ -1,6 +1,8 @@
 package amqpx
 
 import (
+	"fmt"
+
 	"github.com/pkg/errors"
 	"github.com/streadway/amqp"
 )
@@ -120,7 +122,7 @@ func (ch *channelWrapper) Publish(
 	})
 }
 
-func openChannel(conn *amqp.Connection, retryOpts retrierOptions, obs Observer) (Channel, error) {
+func openChannel(conn *amqp.Connection, retryOpts retrierOptions, obs Observer, logger Logger) (Channel, error) {
 	var (
 		err   error
 		ch    *amqp.Channel
@@ -136,6 +138,11 @@ func openChannel(conn *amqp.Connection, retryOpts retrierOptions, obs Observer) 
 					obs.OnClose(err)
 				}
 			}
+
+			logger.Error(
+				fmt.Sprintf("Retry to obtain a channel for connection %s",
+					conn.LocalAddr()))
+
 			return errors.Wrap(err, ErrMessageCannotOpenChannel)
 		}
 		return nil
@@ -144,6 +151,8 @@ func openChannel(conn *amqp.Connection, retryOpts retrierOptions, obs Observer) 
 	if err != nil {
 		return nil, errors.Wrap(err, ErrMessageRetryExceeded)
 	}
+
+	logger.Debug(fmt.Sprintf("Opened channel on connection %s", conn.LocalAddr()))
 
 	return newChannel(ch, retry), nil
 }

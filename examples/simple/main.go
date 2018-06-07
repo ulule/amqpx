@@ -2,7 +2,6 @@ package main
 
 import (
 	"flag"
-	"fmt"
 	"log"
 	"os"
 	"os/signal"
@@ -20,20 +19,27 @@ func main() {
 
 func run() error {
 	var (
-		uri      string
-		pool     bool
-		capacity int
+		uri         string
+		pool        bool
+		capacity    int
+		loggerLevel string
 	)
 
 	flag.StringVar(&uri, "uri", "amqp://guest:guest@127.0.0.1:5672/amqpx", "Broker URI")
 	flag.BoolVar(&pool, "pool", false, "Enable connections pool")
 	flag.IntVar(&capacity, "pool.capacity", amqpx.DefaultConnectionsCapacity, "Number of connections")
+	flag.StringVar(&loggerLevel, "logger.level", amqpx.LoggerLevelDebugStr, "Logger level")
 	flag.Parse()
 
+	if capacity != 0 {
+		pool = true
+	}
+
 	opts := options{
-		uri:      uri,
-		pool:     pool,
-		capacity: capacity,
+		uri:         uri,
+		pool:        pool,
+		capacity:    capacity,
+		loggerLevel: amqpx.LoggerLevelFromString(loggerLevel),
 	}
 
 	client, err := createClient(opts)
@@ -47,9 +53,10 @@ func run() error {
 }
 
 type options struct {
-	uri      string
-	pool     bool
-	capacity int
+	uri         string
+	pool        bool
+	capacity    int
+	loggerLevel amqpx.LoggerLevel
 }
 
 func createClient(opts options) (amqpx.Client, error) {
@@ -62,12 +69,16 @@ func createClient(opts options) (amqpx.Client, error) {
 	// By defaults, the client uses of pool of 10 connections.
 	// But we only need a single one, we can just pass WithoutConnectionsPool().
 	if !opts.pool {
-		return amqpx.New(dialer, amqpx.WithoutConnectionsPool())
+		return amqpx.New(dialer,
+			amqpx.WithDefaultLogger(opts.loggerLevel),
+			amqpx.WithoutConnectionsPool())
 	}
 
 	// Otherwise, if we need more connections, we can define the capacity
 	// with WithCapacity() option.
-	return amqpx.New(dialer, amqpx.WithCapacity(opts.capacity))
+	return amqpx.New(dialer,
+		amqpx.WithDefaultLogger(opts.loggerLevel),
+		amqpx.WithCapacity(opts.capacity))
 }
 
 func runClient(client amqpx.Client) {
@@ -79,8 +90,10 @@ func runClient(client amqpx.Client) {
 	signal.Notify(interrupt, os.Interrupt)
 
 	defer func() {
-		fmt.Printf("Stopping ticker\n")
 		ticker.Stop()
+		if !client.IsClosed() {
+			_ = client.Close()
+		}
 	}()
 
 	for {
@@ -91,7 +104,7 @@ func runClient(client amqpx.Client) {
 				log.Fatal(err)
 				return
 			}
-			fmt.Printf("Create channel\n")
+
 			err = channel.Close()
 			if err != nil {
 				log.Fatal(err)

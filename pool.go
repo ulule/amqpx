@@ -1,6 +1,7 @@
 package amqpx
 
 import (
+	"fmt"
 	"io"
 	"math/rand"
 	"sync"
@@ -16,6 +17,7 @@ type Pool struct {
 	mutex        sync.RWMutex
 	dialer       Dialer
 	observer     Observer
+	logger       Logger
 	connections  []*amqp.Connection
 	closed       bool
 	retryOptions retriersOptions
@@ -23,17 +25,15 @@ type Pool struct {
 
 // newPool returns a new client which use a connections pool for amqp's channel.
 func newPool(options *clientOptions) (Client, error) {
-	// Default channel pool.
 	instance := &Pool{
 		dialer:       options.dialer,
 		observer:     options.observer,
+		logger:       options.logger,
 		retryOptions: options.retriers,
 	}
 
-	// Create connections pool.
 	instance.connections = []*amqp.Connection{}
 
-	// Open and keep amqp connections.
 	for i := 0; i < options.capacity; i++ {
 		err := instance.newConnection()
 		if err != nil {
@@ -59,6 +59,7 @@ func (e *Pool) newConnection() error {
 	err = retry.retry(func() error {
 		connection, err = e.dialer.dial(idx)
 		if err != nil {
+			e.logger.Error("Failed to obtain a connection - trying again")
 			return errors.Wrap(err, ErrMessageCannotOpenConnection)
 		}
 		return nil
@@ -68,6 +69,7 @@ func (e *Pool) newConnection() error {
 		return errors.Wrap(err, ErrMessageRetryExceeded)
 	}
 
+	e.logger.Debug(fmt.Sprintf("Opened connection %s", connection.LocalAddr()))
 	e.connections = append(e.connections, connection)
 	e.listenOnCloseConnection(idx, connection)
 
@@ -79,6 +81,7 @@ func (e *Pool) releaseConnection(idx int) {
 	e.mutex.Lock()
 	defer e.mutex.Unlock()
 	e.connections[idx] = nil
+	e.logger.Debug(fmt.Sprintf("Released connection %d", idx))
 }
 
 // listenOnCloseConnection will listen on a connection close event.
@@ -101,6 +104,8 @@ func (e *Pool) listenOnCloseConnection(idx int, connection *amqp.Connection) {
 // retryConnection will try to open a new connection, unless the client is closed.
 // If it succeed, it will add this connection on the connections pool.
 func (e *Pool) retryConnection(idx int) {
+	e.logger.Debug(fmt.Sprintf("Retrying to open a new connection %d", idx))
+
 	for {
 		e.mutex.RLock()
 		closed := e.closed
@@ -115,6 +120,10 @@ func (e *Pool) retryConnection(idx int) {
 		connection, err := e.dialer.dial(idx)
 		if err == nil {
 			e.mutex.Lock()
+			e.logger.Debug(
+				fmt.Sprintf("Opened new connection %s (%d)",
+					connection.LocalAddr(),
+					idx))
 			e.connections[idx] = connection
 			e.listenOnCloseConnection(idx, connection)
 			e.mutex.Unlock()
@@ -147,7 +156,7 @@ func (e *Pool) Channel() (Channel, error) {
 		}
 
 		if connection != nil {
-			return openChannel(connection, e.retryOptions.channel, e.observer)
+			return openChannel(connection, e.retryOptions.channel, e.observer, e.logger)
 		}
 	}
 
@@ -174,7 +183,9 @@ func (e *Pool) Close() error {
 	e.closed = true
 	for i := range e.connections {
 		if e.connections[i] != nil {
-			e.close(e.connections[i])
+			conn := e.connections[i]
+			e.logger.Debug(fmt.Sprintf("Closing connection %d (%s)", i, conn.LocalAddr()))
+			e.close(conn)
 		}
 	}
 

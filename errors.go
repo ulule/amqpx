@@ -28,6 +28,9 @@ var (
 
 	// ErrObserverRequired occurs when given observer is empty.
 	ErrObserverRequired = fmt.Errorf("an observer instance is required")
+
+	// ErrLoggerRequired occurs when given logger is not set.
+	ErrLoggerRequired = fmt.Errorf("a logger instance is required")
 )
 
 // Error Messages

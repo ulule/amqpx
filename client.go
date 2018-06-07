@@ -4,6 +4,8 @@
 package amqpx
 
 import (
+	"fmt"
+
 	"github.com/pkg/errors"
 )
 
@@ -24,6 +26,7 @@ func New(dialer Dialer, options ...ClientOption) (Client, error) {
 	opts := &clientOptions{
 		dialer:   dialer,
 		observer: &defaultObserver{},
+		logger:   &noopLogger{},
 		usePool:  true,
 		capacity: DefaultConnectionsCapacity,
 		retriers: retriersOptions{},
@@ -37,8 +40,13 @@ func New(dialer Dialer, options ...ClientOption) (Client, error) {
 	}
 
 	if !opts.usePool {
+		opts.logger.Debug("Connection pooling DISABLED")
 		return newSimple(opts)
 	}
+
+	opts.logger.Debug(
+		fmt.Sprintf("Connection pooling ENABLED (%d connections)",
+			opts.capacity))
 
 	return newPool(opts)
 }
