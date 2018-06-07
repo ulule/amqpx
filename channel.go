@@ -49,6 +49,7 @@ type Channel interface {
 	Reject(tag uint64, requeue bool) error
 }
 
+// channelWrapper wraps a amqp channel to provide a retry mechanism.
 type channelWrapper struct {
 	*amqp.Channel
 	retrier retrier
@@ -62,21 +63,11 @@ func newChannel(ch *amqp.Channel, rt retrier) Channel {
 }
 
 // Publish overrides amqp.Channel.Publish method to provide a retry mechanism.
-func (ch *channelWrapper) Publish(
-	exchange string,
-	key string,
-	mandatory bool,
-	immediate bool,
-	msg Publishing) error {
-
-	return ch.retrier.retry(func() error {
-		return ch.Channel.Publish(
-			exchange,
-			key,
-			mandatory,
-			immediate,
-			msg)
-	})
+func (ch *channelWrapper) Publish(exchange string, key string, mandatory bool, immediate bool, msg Publishing) error {
+	handler := func() error {
+		return ch.Channel.Publish(exchange, key, mandatory, immediate, msg)
+	}
+	return ch.retrier.retry(handler)
 }
 
 func openChannel(conn *amqp.Connection, retryOpts retrierOptions, obs Observer, logger Logger) (Channel, error) {
