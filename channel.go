@@ -70,27 +70,24 @@ func (ch *channelWrapper) Publish(exchange string, key string, mandatory bool, i
 	return ch.retrier.retry(handler)
 }
 
-func openChannel(conn *amqp.Connection, retryOpts retrierOptions, obs Observer, logger Logger) (Channel, error) {
+func openChannel(conn *amqp.Connection, retryOpts retrierOptions, observer Observer, logger Logger) (Channel, error) {
 	var (
-		err   error
-		ch    *amqp.Channel
-		retry = newRetrier(retryOpts)
+		err     error
+		ch      *amqp.Channel
+		retrier = newRetrier(retryOpts)
 	)
 
-	err = retry.retry(func() error {
+	err = retrier.retry(func() error {
 		ch, err = conn.Channel()
 		if err != nil && err != amqp.ErrClosed {
 			if ch != nil {
-				err = ch.Close()
-				if err != nil {
-					obs.OnClose(err)
+				thr := ch.Close()
+				if thr != nil {
+					observer.OnClose(thr)
 				}
 			}
 
-			logger.Error(
-				fmt.Sprintf("Retry to obtain a channel for connection %s",
-					conn.LocalAddr()))
-
+			logger.Error(fmt.Sprintf("Retry to obtain a channel for connection: %s", conn.LocalAddr()))
 			return errors.Wrap(err, ErrMessageCannotOpenChannel)
 		}
 		return nil
@@ -100,9 +97,9 @@ func openChannel(conn *amqp.Connection, retryOpts retrierOptions, obs Observer, 
 		return nil, errors.Wrap(err, ErrMessageRetryExceeded)
 	}
 
-	logger.Debug(fmt.Sprintf("Opened channel on connection %s", conn.LocalAddr()))
+	logger.Debug(fmt.Sprintf("Opened channel on connection: %s", conn.LocalAddr()))
 
-	return newChannel(ch, retry), nil
+	return newChannel(ch, retrier), nil
 }
 
 var _ Channel = (*channelWrapper)(nil)
