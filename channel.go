@@ -14,72 +14,29 @@ type Channel interface {
 	NotifyFlow(c chan bool) chan bool
 	NotifyReturn(c chan Return) chan Return
 	NotifyCancel(c chan string) chan string
-	NotifyConfirm(ack, nack chan uint64) (chan uint64, chan uint64)
+	NotifyConfirm(ack chan uint64, nack chan uint64) (chan uint64, chan uint64)
 	NotifyPublish(confirm chan Confirmation) chan Confirmation
-	Qos(prefetchCount, prefetchSize int, global bool) error
+	Qos(prefetchCount int, prefetchSize int, global bool) error
 	Cancel(consumer string, noWait bool) error
-	QueueDeclare(
-		name string,
-		durable,
-		autoDelete,
-		exclusive,
-		noWait bool,
-		args Table) (Queue, error)
-	QueueDeclarePassive(
-		name string,
-		durable,
-		autoDelete,
-		exclusive,
-		noWait bool,
-		args Table) (Queue, error)
+	QueueDeclare(name string, durable bool, autoDelete bool,
+		exclusive bool, noWait bool, args Table) (Queue, error)
+	QueueDeclarePassive(name string, durable bool, autoDelete bool,
+		exclusive bool, noWait bool, args Table) (Queue, error)
 	QueueInspect(name string) (Queue, error)
-	QueueBind(name, key, exchange string, noWait bool, args Table) error
-	QueueUnbind(name, key, exchange string, args Table) error
+	QueueBind(name string, key string, exchange string, noWait bool, args Table) error
+	QueueUnbind(name string, key string, exchange string, args Table) error
 	QueuePurge(name string, noWait bool) (int, error)
-	QueueDelete(name string, ifUnused, ifEmpty, noWait bool) (int, error)
-	Consume(
-		queue,
-		consumer string,
-		autoAck,
-		exclusive,
-		noLocal,
-		noWait bool,
-		args Table) (<-chan Delivery, error)
-	ExchangeDeclare(
-		name,
-		kind string,
-		durable,
-		autoDelete,
-		internal,
-		noWait bool,
-		args Table) error
-	ExchangeDeclarePassive(
-		name,
-		kind string,
-		durable,
-		autoDelete,
-		internal,
-		noWait bool,
-		args Table) error
+	QueueDelete(name string, ifUnused bool, ifEmpty bool, noWait bool) (int, error)
+	Consume(queue string, consumer string, autoAck bool, exclusive bool,
+		noLocal bool, noWait bool, args Table) (<-chan Delivery, error)
+	ExchangeDeclare(name string, kind string, durable bool, autoDelete bool,
+		internal bool, noWait bool, args Table) error
+	ExchangeDeclarePassive(name string, kind string, durable bool, autoDelete bool,
+		internal bool, noWait bool, args Table) error
 	ExchangeDelete(name string, ifUnused, noWait bool) error
-	ExchangeBind(
-		destination,
-		key,
-		source string,
-		noWait bool,
-		args Table) error
-	ExchangeUnbind(
-		destination,
-		key,
-		source string,
-		noWait bool,
-		args Table) error
-	Publish(
-		exchange string,
-		key string,
-		mandatory bool,
-		immediate bool,
-		msg Publishing) error
+	ExchangeBind(destination string, key string, source string, noWait bool, args Table) error
+	ExchangeUnbind(destination string, key string, source string, noWait bool, args Table) error
+	Publish(exchange string, key string, mandatory bool, immediate bool, msg Publishing) error
 	Get(queue string, autoAck bool) (msg Delivery, ok bool, err error)
 	Tx() error
 	TxCommit() error
