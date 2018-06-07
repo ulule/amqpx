@@ -21,6 +21,8 @@ prepare_docker() {
     mkdir -p "${cache}"
     cp "${cnf}/Dockerfile" "${cache}"
     cp "${src}/"*.go "${cache}"
+    cp "${src}/Gopkg.toml" "${cache}"
+    cp "${src}/Gopkg.lock" "${cache}"
     cp "${src}/gometalinter.json" "${cache}"
 
 }
