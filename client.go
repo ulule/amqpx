@@ -19,6 +19,9 @@ type Client interface {
 
 	// IsClosed returns if the client is closed.
 	IsClosed() bool
+
+	// channel returns a new amqp's channel from current client unless it's closed.
+	channel() (*amqp.Channel, error)
 }
 
 // New returns a new Client with the given Dialer and options.
@@ -40,13 +43,11 @@ func New(dialer Dialer, options ...ClientOption) (Client, error) {
 	}
 
 	if !opts.usePool {
-		opts.logger.Debug("Connection pooling DISABLED")
+		opts.logger.Debug("Connection pooling is disabled")
 		return newSimple(opts)
 	}
 
-	opts.logger.Debug(
-		fmt.Sprintf("Connection pooling ENABLED (%d connections)",
-			opts.capacity))
+	opts.logger.Debug(fmt.Sprintf("Connection pooling is enabled (%d connections)", opts.capacity))
 
 	return newPool(opts)
 }

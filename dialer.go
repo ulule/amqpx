@@ -4,6 +4,7 @@ import (
 	"net"
 	"time"
 
+	"github.com/pkg/errors"
 	"github.com/streadway/amqp"
 )
 
@@ -16,19 +17,20 @@ type Dialer interface {
 	dial(id int) (*amqp.Connection, error)
 }
 
-type amqpDialer func(network string, addr string) (net.Conn, error)
-
-func dialer(timeout time.Duration) amqpDialer {
-	return func(network string, addr string) (net.Conn, error) {
-		conn, err := net.DialTimeout(network, addr, timeout)
+func dialer(timeout time.Duration) func(network string, address string) (net.Conn, error) {
+	return func(network string, address string) (net.Conn, error) {
+		// Dial a remote address with a timeout.
+		conn, err := net.DialTimeout(network, address, timeout)
 		if err != nil {
-			return nil, err
+			// TODO Better error message
+			return nil, errors.Wrap(err, "dial has timeout")
 		}
 
 		// Heartbeating hasn't started yet, don't stall forever on a dead server.
 		err = conn.SetReadDeadline(time.Now().Add(timeout))
 		if err != nil {
-			return nil, err
+			// TODO Better error message
+			return nil, errors.Wrap(err, "cannot define a read timeout")
 		}
 
 		return conn, nil

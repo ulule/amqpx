@@ -21,10 +21,12 @@ func SimpleDialer(uri string, options ...DialerOption) (Dialer, error) {
 		}
 	}
 
-	return &simpleDialer{
+	dialer := &simpleDialer{
 		dialerOptions: opts,
 		uri:           uri,
-	}, nil
+	}
+
+	return dialer, nil
 }
 
 type simpleDialer struct {

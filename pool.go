@@ -49,24 +49,11 @@ func (e *Pool) newConnection() error {
 	e.mutex.Lock()
 	defer e.mutex.Unlock()
 
-	var (
-		err        error
-		connection *amqp.Connection
-		idx        = len(e.connections)
-		retry      = newRetrier(e.retryOptions.connection)
-	)
-
-	err = retry.retry(func() error {
-		connection, err = e.dialer.dial(idx)
-		if err != nil {
-			e.logger.Error("Failed to obtain a connection - trying again")
-			return errors.Wrap(err, ErrMessageCannotOpenConnection)
-		}
-		return nil
-	})
+	idx := len(e.connections)
+	connection, err := e.dialer.dial(idx)
 
 	if err != nil {
-		return errors.Wrap(err, ErrMessageRetryExceeded)
+		return errors.Wrap(err, ErrMessageCannotOpenConnection)
 	}
 
 	e.logger.Debug(fmt.Sprintf("Opened connection %s", connection.LocalAddr()))
@@ -120,10 +107,7 @@ func (e *Pool) retryConnection(idx int) {
 		connection, err := e.dialer.dial(idx)
 		if err == nil {
 			e.mutex.Lock()
-			e.logger.Debug(
-				fmt.Sprintf("Opened new connection %s (%d)",
-					connection.LocalAddr(),
-					idx))
+			e.logger.Debug(fmt.Sprintf("Opened new connection %s (%d)", connection.LocalAddr(), idx))
 			e.connections[idx] = connection
 			e.listenOnCloseConnection(idx, connection)
 			e.mutex.Unlock()
@@ -136,8 +120,22 @@ func (e *Pool) retryConnection(idx int) {
 	}
 }
 
-// Channel returns a new Channel from our connections pool.
+// channel returns a new channel from our connections pool.
 func (e *Pool) Channel() (Channel, error) {
+	e.mutex.RLock()
+	defer e.mutex.RUnlock()
+
+	if e.closed {
+		return nil, errors.Wrap(ErrClientClosed, ErrMessageCannotOpenChannel)
+	}
+
+	// TODO FIX
+	channel := NewChannelWrapper(e, e.retryOptions)
+	return channel, nil
+}
+
+// channel returns a new channel from our connections pool.
+func (e *Pool) channel() (*amqp.Channel, error) {
 	e.mutex.RLock()
 	capacity := len(e.connections)
 	offset := rand.Intn(capacity)
@@ -156,7 +154,10 @@ func (e *Pool) Channel() (Channel, error) {
 		}
 
 		if connection != nil {
-			return openChannel(connection, e.retryOptions.channel, e.observer, e.logger)
+			channel, err := connection.Channel()
+			if err == nil {
+				return channel, nil
+			}
 		}
 	}
 

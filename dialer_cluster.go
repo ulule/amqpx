@@ -21,10 +21,12 @@ func ClusterDialer(list []string, options ...DialerOption) (Dialer, error) {
 		}
 	}
 
-	return &clusterDialer{
+	dialer := &clusterDialer{
 		dialerOptions: opts,
 		list:          list,
-	}, nil
+	}
+
+	return dialer, nil
 }
 
 type clusterDialer struct {

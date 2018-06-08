@@ -39,6 +39,20 @@ func newSimple(options *clientOptions) (Client, error) {
 
 // Channel returns a new amqp's channel from current client unless it's closed.
 func (e *Simple) Channel() (Channel, error) {
+	e.mutex.RLock()
+	defer e.mutex.RUnlock()
+
+	if e.closed {
+		return nil, errors.Wrap(ErrClientClosed, ErrMessageCannotOpenChannel)
+	}
+
+	// TODO FIX
+	channel := NewChannelWrapper(e, e.retryOptions)
+	return channel, nil
+}
+
+// channel returns a new amqp's channel from current client unless it's closed.
+func (e *Simple) channel() (*amqp.Channel, error) {
 	e.mutex.Lock()
 	defer e.mutex.Unlock()
 
@@ -47,8 +61,11 @@ func (e *Simple) Channel() (Channel, error) {
 	}
 
 	// Try to acquire a channel.
-	channel, err := openChannel(e.connection, e.retryOptions.channel, e.observer, e.logger)
-	if err != nil {
+	channel, err := e.connection.Channel()
+	if err != nil && err != amqp.ErrClosed {
+		if channel != nil {
+			e.close(channel)
+		}
 		return nil, errors.Wrap(err, ErrMessageCannotOpenChannel)
 	}
 
@@ -61,8 +78,11 @@ func (e *Simple) Channel() (Channel, error) {
 			return nil, err
 		}
 
-		channel, err = openChannel(e.connection, e.retryOptions.channel, e.observer, e.logger)
+		channel, err = e.connection.Channel()
 		if err != nil {
+			if channel != nil {
+				e.close(channel)
+			}
 			return nil, errors.Wrap(err, ErrMessageCannotOpenChannel)
 		}
 	}
