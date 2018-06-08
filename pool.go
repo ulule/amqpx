@@ -51,8 +51,8 @@ func (e *Pool) newConnection() error {
 
 	idx := len(e.connections)
 	connection, err := e.dialer.dial(idx)
-
 	if err != nil {
+		e.logger.Error("Failed to obtain a connection")
 		return errors.Wrap(err, ErrMessageCannotOpenConnection)
 	}
 
