@@ -120,7 +120,7 @@ func (e *Pool) retryConnection(idx int) {
 	}
 }
 
-// channel returns a new channel from our connections pool.
+// Channel returns a new Channel from our connections pool.
 func (e *Pool) Channel() (Channel, error) {
 	e.mutex.RLock()
 	defer e.mutex.RUnlock()
