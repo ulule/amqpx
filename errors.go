@@ -35,9 +35,11 @@ var (
 
 // Error Messages
 const (
-	ErrMessageCannotCreateDialer   = "cannot create a new dialer"
-	ErrMessageCannotCreateClient   = "cannot create a new client"
-	ErrMessageCannotOpenChannel    = "cannot open a new channel"
-	ErrMessageCannotOpenConnection = "cannot open a new connection"
-	ErrMessageRetryExceeded        = "retry exceeded"
+	ErrMessageCannotCreateDialer    = "cannot create a new dialer"
+	ErrMessageCannotCreateClient    = "cannot create a new client"
+	ErrMessageCannotOpenConnection  = "cannot open a new connection"
+	ErrMessageCannotOpenChannel     = "cannot open a new channel"
+	ErrMessageCannotCloseConnection = "cannot close connection"
+	ErrMessageCannotCloseChannel    = "cannot close channel"
+	ErrMessageRetryExceeded         = "retry exceeded"
 )

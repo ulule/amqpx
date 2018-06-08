@@ -1,7 +1,7 @@
 package amqpx
 
 import (
-	"fmt"
+	"io"
 	"sync"
 
 	"github.com/pkg/errors"
@@ -52,23 +52,38 @@ type Channel interface {
 
 // ChannelWrapper wraps a amqp channel to provide a retry mechanism.
 type ChannelWrapper struct {
-	mutex   sync.RWMutex
-	client  Client
-	retrier retrier
-	channel *amqp.Channel
+	mutex    sync.RWMutex
+	client   Client
+	observer Observer
+	logger   Logger
+	retrier  retrier
+	channel  *amqp.Channel
 }
 
 func NewChannelWrapper(client Client, retrier retrier) Channel {
 	return &ChannelWrapper{
-		client:  client,
-		retrier: retrier,
+		client:   client,
+		logger:   client.getLogger(),
+		observer: client.getObserver(),
+		retrier:  retrier,
 	}
 }
 
 // TODO (novln): Decide what and how we obtain a channel on this wrapper.
 
 func (ch *ChannelWrapper) Close() error {
-	return ch.channel.Close()
+	ch.mutex.Lock()
+	defer ch.mutex.Unlock()
+
+	if ch.channel != nil {
+		err := ch.channel.Close()
+		if err != nil {
+			return errors.Wrap(err, ErrMessageCannotCloseChannel)
+		}
+		ch.channel = nil
+	}
+
+	return nil
 }
 
 func (ch *ChannelWrapper) NotifyClose(c chan *Error) chan *Error {
@@ -207,41 +222,59 @@ func (ch *ChannelWrapper) Reject(tag uint64, requeue bool) error {
 	return ch.channel.Reject(tag, requeue)
 }
 
-func (ch *ChannelWrapper) openConnection() error {
-	// TODO obtain a new connection (or a new channel).
+func (ch *ChannelWrapper) releaseChannel() {
+	ch.mutex.Lock()
+	defer ch.mutex.Unlock()
+	if ch.channel != nil {
+		ch.close(ch.channel)
+	}
+	ch.channel = nil
+}
+
+func (ch *ChannelWrapper) close(connection io.Closer) {
+	err := connection.Close()
+	if err != nil {
+		ch.logger.Error("Failed to close connection")
+		ch.observer.OnClose(err)
+	}
+}
+
+func (ch *ChannelWrapper) newChannel() error {
+	ch.mutex.Lock()
+	defer ch.mutex.Unlock()
+
+	if ch.channel != nil {
+		return nil
+	}
+
+	var closed error
+	err := ch.retrier.retry(func() error {
+
+		channel, err := ch.client.newChannel()
+		if err == nil {
+			ch.channel = channel
+			return nil
+		}
+
+		if channel != nil {
+			ch.close(channel)
+		}
+
+		if errors.Cause(err) == ErrClientClosed {
+			closed = err
+			return nil
+		}
+
+		return err
+	})
+	if err != nil {
+		return err
+	}
+	if closed != nil {
+		return closed
+	}
+
 	return nil
 }
 
-func openChannel(conn *amqp.Connection, retryOpts retrierOptions, observer Observer, logger Logger) (Channel, error) {
-	var (
-		err     error
-		ch      *amqp.Channel
-		retrier = newRetrier(retryOpts)
-	)
-
-	err = retrier.retry(func() error {
-		ch, err = conn.Channel()
-		if err != nil && err != amqp.ErrClosed {
-			if ch != nil {
-				thr := ch.Close()
-				if thr != nil {
-					observer.OnClose(thr)
-				}
-			}
-
-			logger.Error(fmt.Sprintf("Retry to obtain a channel for connection: %s", conn.LocalAddr()))
-			return errors.Wrap(err, ErrMessageCannotOpenChannel)
-		}
-		return nil
-	})
-
-	if err != nil {
-		return nil, errors.Wrap(err, ErrMessageRetryExceeded)
-	}
-
-	logger.Debug(fmt.Sprintf("Opened channel on connection: %s", conn.LocalAddr()))
-
-	return newChannel(ch, retrier), nil
-}
-
-var _ Channel = (*channelWrapper)(nil)
+var _ Channel = (*ChannelWrapper)(nil)

@@ -12,21 +12,21 @@ import (
 // Simple implements the Client interface without a connections pool.
 // It will use a single connection for multiple channel.
 type Simple struct {
-	mutex        sync.RWMutex
-	dialer       Dialer
-	observer     Observer
-	logger       Logger
-	connection   *amqp.Connection
-	closed       bool
-	retryOptions retriersOptions
+	mutex       sync.RWMutex
+	dialer      Dialer
+	observer    Observer
+	logger      Logger
+	connection  *amqp.Connection
+	closed      bool
+	retryOption retrierOptions
 }
 
 func newSimple(options *clientOptions) (Client, error) {
 	instance := &Simple{
-		dialer:       options.dialer,
-		observer:     options.observer,
-		logger:       options.logger,
-		retryOptions: options.retriers,
+		dialer:      options.dialer,
+		observer:    options.observer,
+		logger:      options.logger,
+		retryOption: options.retrier,
 	}
 
 	err := instance.newConnection()
@@ -37,7 +37,7 @@ func newSimple(options *clientOptions) (Client, error) {
 	return instance, nil
 }
 
-// Channel returns a new amqp's channel from current client unless it's closed.
+// Channel returns a new Channel from current client unless it's closed.
 func (e *Simple) Channel() (Channel, error) {
 	e.mutex.RLock()
 	defer e.mutex.RUnlock()
@@ -46,13 +46,12 @@ func (e *Simple) Channel() (Channel, error) {
 		return nil, errors.Wrap(ErrClientClosed, ErrMessageCannotOpenChannel)
 	}
 
-	// TODO FIX
-	channel := NewChannelWrapper(e, e.retryOptions)
+	channel := NewChannelWrapper(e, newRetrier(e.retryOption))
 	return channel, nil
 }
 
-// channel returns a new amqp's channel from current client unless it's closed.
-func (e *Simple) channel() (*amqp.Channel, error) {
+// newChannel returns a new amqp's channel from current connection unless it's closed.
+func (e *Simple) newChannel() (*amqp.Channel, error) {
 	e.mutex.Lock()
 	defer e.mutex.Unlock()
 
@@ -91,32 +90,18 @@ func (e *Simple) channel() (*amqp.Channel, error) {
 }
 
 func (e *Simple) newConnection() error {
-	var (
-		err        error
-		connection *amqp.Connection
-		retry      = newRetrier(e.retryOptions.connection)
-	)
-
 	if e.connection != nil {
 		e.close(e.connection)
 	}
 
-	err = retry.retry(func() error {
-		connection, err = e.dialer.dial(0)
-		if err != nil {
-			e.logger.Error("Failed to obtain a connection - trying again")
-			return errors.Wrap(err, ErrMessageCannotOpenConnection)
-		}
-		return nil
-	})
-
+	connection, err := e.dialer.dial(0)
 	if err != nil {
-		return errors.Wrap(err, ErrMessageRetryExceeded)
+		e.logger.Error("Failed to open a new connection")
+		return errors.Wrap(err, ErrMessageCannotOpenConnection)
 	}
 
 	e.logger.Debug(fmt.Sprintf("Opened connection %s", connection.LocalAddr()))
 	e.connection = connection
-
 	return nil
 }
 
@@ -144,6 +129,14 @@ func (e *Simple) close(connection io.Closer) {
 	}
 
 	e.closed = true
+}
+
+func (e *Simple) getLogger() Logger {
+	return e.logger
+}
+
+func (e *Simple) getObserver() Observer {
+	return e.observer
 }
 
 var _ Client = (*Simple)(nil)

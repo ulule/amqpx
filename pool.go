@@ -14,22 +14,22 @@ import (
 // Pool implements the Client interface using a connections pool.
 // It will reuse a healthy connection from pool when a channel is requested.
 type Pool struct {
-	mutex        sync.RWMutex
-	dialer       Dialer
-	observer     Observer
-	logger       Logger
-	connections  []*amqp.Connection
-	closed       bool
-	retryOptions retriersOptions
+	mutex       sync.RWMutex
+	dialer      Dialer
+	observer    Observer
+	logger      Logger
+	connections []*amqp.Connection
+	closed      bool
+	retryOption retrierOptions
 }
 
 // newPool returns a new client which use a connections pool for amqp's channel.
 func newPool(options *clientOptions) (Client, error) {
 	instance := &Pool{
-		dialer:       options.dialer,
-		observer:     options.observer,
-		logger:       options.logger,
-		retryOptions: options.retriers,
+		dialer:      options.dialer,
+		observer:    options.observer,
+		logger:      options.logger,
+		retryOption: options.retrier,
 	}
 
 	instance.connections = []*amqp.Connection{}
@@ -120,7 +120,7 @@ func (e *Pool) retryConnection(idx int) {
 	}
 }
 
-// Channel returns a new Channel from our connections pool.
+// Channel returns a new Channel from current client unless it's closed.
 func (e *Pool) Channel() (Channel, error) {
 	e.mutex.RLock()
 	defer e.mutex.RUnlock()
@@ -129,13 +129,12 @@ func (e *Pool) Channel() (Channel, error) {
 		return nil, errors.Wrap(ErrClientClosed, ErrMessageCannotOpenChannel)
 	}
 
-	// TODO FIX
-	channel := NewChannelWrapper(e, e.retryOptions)
+	channel := NewChannelWrapper(e, newRetrier(e.retryOption))
 	return channel, nil
 }
 
-// channel returns a new channel from our connections pool.
-func (e *Pool) channel() (*amqp.Channel, error) {
+// newChannel returns a new channel from our connections pool.
+func (e *Pool) newChannel() (*amqp.Channel, error) {
 	e.mutex.RLock()
 	capacity := len(e.connections)
 	offset := rand.Intn(capacity)
@@ -205,6 +204,14 @@ func (e *Pool) close(connection io.Closer) {
 	if err != nil {
 		e.observer.OnClose(err)
 	}
+}
+
+func (e *Pool) getLogger() Logger {
+	return e.logger
+}
+
+func (e *Pool) getObserver() Observer {
+	return e.observer
 }
 
 var _ Client = (*Pool)(nil)

@@ -2,7 +2,7 @@ package amqpx
 
 import "time"
 
-type retryStrategy int
+type retryStrategy uint8
 
 const (
 	retryStrategyNoop retryStrategy = iota
@@ -19,11 +19,6 @@ type retrierOptions struct {
 		maxInterval     time.Duration
 		maxElapsedTime  time.Duration
 	}
-}
-
-type retriersOptions struct {
-	connection retrierOptions
-	channel    retrierOptions
 }
 
 func newRetrier(opts retrierOptions) retrier {

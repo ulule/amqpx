@@ -19,7 +19,7 @@ type clientOptions struct {
 	logger   Logger
 	usePool  bool
 	capacity int
-	retriers retriersOptions
+	retrier  retrierOptions
 }
 
 // WithCapacity will configure a Client with the given number of connections.
@@ -72,32 +72,17 @@ func WithDefaultLogger(level LoggerLevel) ClientOption {
 	})
 }
 
-// WithExponentialConnectionRetry will configure a Client with the given exponential
+// WithExponentialRetry will configure a Client with the given exponential
 // connection retry durations.
-func WithExponentialConnectionRetry(initialInterval, maxInterval, maxElapsedTime time.Duration) ClientOption {
+func WithExponentialRetry(initialInterval, maxInterval, maxElapsedTime time.Duration) ClientOption {
 	return clientOption(func(options *clientOptions) error {
 		if initialInterval <= 0 || maxInterval <= 0 || maxElapsedTime <= 0 {
 			return ErrInvalidRetryDuration
 		}
-		options.retriers.connection.strategy = retryStrategyExponential
-		options.retriers.connection.exponential.initialInterval = initialInterval
-		options.retriers.connection.exponential.maxInterval = maxInterval
-		options.retriers.connection.exponential.maxElapsedTime = maxElapsedTime
-		return nil
-	})
-}
-
-// WithExponentialChannelRetry will configure a Client with the given exponential
-// channel retry durations.
-func WithExponentialChannelRetry(initialInterval, maxInterval, maxElapsedTime time.Duration) ClientOption {
-	return clientOption(func(options *clientOptions) error {
-		if initialInterval <= 0 || maxInterval <= 0 || maxElapsedTime <= 0 {
-			return ErrInvalidRetryDuration
-		}
-		options.retriers.channel.strategy = retryStrategyExponential
-		options.retriers.channel.exponential.initialInterval = initialInterval
-		options.retriers.channel.exponential.maxInterval = maxInterval
-		options.retriers.channel.exponential.maxElapsedTime = maxElapsedTime
+		options.retrier.strategy = retryStrategyExponential
+		options.retrier.exponential.initialInterval = initialInterval
+		options.retrier.exponential.maxInterval = maxInterval
+		options.retrier.exponential.maxElapsedTime = maxElapsedTime
 		return nil
 	})
 }

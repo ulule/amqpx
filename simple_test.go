@@ -34,10 +34,12 @@ func TestSimpleClient_WithExponentialConnectionRetry(t *testing.T) {
 	client, err := amqpx.New(
 		dialer,
 		amqpx.WithoutConnectionsPool(),
-		amqpx.WithExponentialConnectionRetry(
+		amqpx.WithExponentialRetry(
 			initialInterval,
 			maxInterval,
-			maxElapsedTime))
+			maxElapsedTime,
+		),
+	)
 
 	is.Nil(client)
 	is.NotNil(err)
