@@ -38,20 +38,7 @@ func newSimple(options *clientOptions) (Client, error) {
 }
 
 // Channel returns a new Channel from current client unless it's closed.
-func (e *Simple) Channel() (Channel, error) {
-	e.mutex.RLock()
-	defer e.mutex.RUnlock()
-
-	if e.closed {
-		return nil, errors.Wrap(ErrClientClosed, ErrMessageCannotOpenChannel)
-	}
-
-	channel := NewChannelWrapper(e, newRetrier(e.retryOption))
-	return channel, nil
-}
-
-// newChannel returns a new amqp's channel from current connection unless it's closed.
-func (e *Simple) newChannel() (*amqp.Channel, error) {
+func (e *Simple) Channel() (*amqp.Channel, error) {
 	e.mutex.Lock()
 	defer e.mutex.Unlock()
 
@@ -137,6 +124,10 @@ func (e *Simple) getLogger() Logger {
 
 func (e *Simple) getObserver() Observer {
 	return e.observer
+}
+
+func (e *Simple) newRetrier() retrier {
+	return newRetrier(e.retryOption)
 }
 
 var _ Client = (*Simple)(nil)

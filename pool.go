@@ -120,21 +120,8 @@ func (e *Pool) retryConnection(idx int) {
 	}
 }
 
-// Channel returns a new Channel from current client unless it's closed.
-func (e *Pool) Channel() (Channel, error) {
-	e.mutex.RLock()
-	defer e.mutex.RUnlock()
-
-	if e.closed {
-		return nil, errors.Wrap(ErrClientClosed, ErrMessageCannotOpenChannel)
-	}
-
-	channel := NewChannelWrapper(e, newRetrier(e.retryOption))
-	return channel, nil
-}
-
-// newChannel returns a new channel from our connections pool.
-func (e *Pool) newChannel() (*amqp.Channel, error) {
+// Channel returns a new channel from our connections pool.
+func (e *Pool) Channel() (*amqp.Channel, error) {
 	e.mutex.RLock()
 	capacity := len(e.connections)
 	offset := rand.Intn(capacity)
@@ -212,6 +199,10 @@ func (e *Pool) getLogger() Logger {
 
 func (e *Pool) getObserver() Observer {
 	return e.observer
+}
+
+func (e *Pool) newRetrier() retrier {
+	return newRetrier(e.retryOption)
 }
 
 var _ Client = (*Pool)(nil)

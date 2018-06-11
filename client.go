@@ -10,7 +10,7 @@ import (
 // Client interface describes a amqp client.
 type Client interface {
 	// Channel returns a new Channel from current client unless it's closed.
-	Channel() (Channel, error)
+	Channel() (*amqp.Channel, error)
 
 	// Close closes the client.
 	Close() error
@@ -18,14 +18,14 @@ type Client interface {
 	// IsClosed returns if the client is closed.
 	IsClosed() bool
 
-	// newChannel returns a new amqp's channel from current client unless it's closed.
-	newChannel() (*amqp.Channel, error)
-
 	// getObserver returns the client's Observer.
 	getObserver() Observer
 
 	// getLogger returns the client's Logger.
 	getLogger() Logger
+
+	// newRetrier returns a new retrier using client configuration.
+	newRetrier() retrier
 }
 
 // New returns a new Client with the given Dialer and options.
