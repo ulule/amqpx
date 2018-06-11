@@ -269,7 +269,11 @@ func (ch *ChannelWrapper) handle(callback func(channel *amqp.Channel) error) err
 		channel, err := ch.getChannel()
 		if err == nil {
 			// TODO (novln): Detect if we should release channel here.
-			return callback(channel)
+			thr := callback(channel)
+			if thr != nil {
+				ch.releaseChannel()
+			}
+			return thr
 		}
 
 		if errors.Cause(err) == ErrClientClosed {
