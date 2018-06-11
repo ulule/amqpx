@@ -56,7 +56,7 @@ func TestSimpleClient_ConcurrentAccess(t *testing.T) {
 	}()
 
 	wg := &sync.WaitGroup{}
-	for i := 0; i < goroutineNumber; i++ {
+	for i := 0; i < numberOfConcurrentAccess; i++ {
 		wg.Add(1)
 		go testClientConcurrentAccess(is, client, wg)
 	}
