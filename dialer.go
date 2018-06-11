@@ -8,6 +8,12 @@ import (
 	"github.com/streadway/amqp"
 )
 
+// Dialer default configuration.
+var (
+	DefaultDialerTimeout   = 30 * time.Second
+	DefaultDialerHeartbeat = 10 * time.Second
+)
+
 // Dialer is an interface that returns a new amqp connection.
 // In order to instantiate a new Dialer, please use SimpleDialer or ClusterDialer.
 type Dialer interface {

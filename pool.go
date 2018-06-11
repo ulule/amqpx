@@ -11,6 +11,12 @@ import (
 	"github.com/streadway/amqp"
 )
 
+// Pooler default configuration.
+const (
+	// DefaultConnectionsCapacity is default connections pool capacity.
+	DefaultConnectionsCapacity = 10
+)
+
 // Pool implements the Client interface using a connections pool.
 // It will reuse a healthy connection from pool when a channel is requested.
 type Pool struct {
