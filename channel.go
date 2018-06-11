@@ -39,21 +39,6 @@ type Channel interface {
 	ExchangeUnbind(destination string, key string, source string, noWait bool, args Table) error
 	Publish(exchange string, key string, mandatory bool, immediate bool, msg Publishing) error
 	Get(queue string, autoAck bool) (msg Delivery, ok bool, err error)
-	// TODO Look it up
-	Confirm(noWait bool) error
-	//
-	// Recover redelivers all unacknowledged deliveries on this channel.
-	//
-	// When requeue is false, messages will be redelivered to the original consumer.
-	//
-	// When requeue is true, messages will be redelivered to any available consumer,
-	// potentially including the original.
-	//
-	// If the deliveries cannot be recovered, an error will be returned and the channel
-	// will be closed.
-	//
-	// TODO Look it up
-	Recover(requeue bool) error
 	//
 	// Ack acknowledges a delivery by its delivery tag when having been consumed with
 	// Channel.Consume or Channel.Get.
@@ -251,14 +236,6 @@ func (ch *ChannelWrapper) Get(queue string, autoAck bool) (msg Delivery, ok bool
 	return msg, ok, err
 }
 
-func (ch *ChannelWrapper) Confirm(noWait bool) error {
-	return ch.channel.Confirm(noWait)
-}
-
-func (ch *ChannelWrapper) Recover(requeue bool) error {
-	return ch.channel.Recover(requeue)
-}
-
 func (ch *ChannelWrapper) Ack(tag uint64, multiple bool) error {
 	return ch.handle(func(channel *amqp.Channel) error {
 		return channel.Ack(tag, multiple)
@@ -272,7 +249,9 @@ func (ch *ChannelWrapper) Nack(tag uint64, multiple bool, requeue bool) error {
 }
 
 func (ch *ChannelWrapper) Reject(tag uint64, requeue bool) error {
-	return ch.channel.Reject(tag, requeue)
+	return ch.handle(func(channel *amqp.Channel) error {
+		return channel.Reject(tag, requeue)
+	})
 }
 
 func (ch *ChannelWrapper) close(connection io.Closer) {
