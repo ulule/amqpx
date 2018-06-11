@@ -6,7 +6,7 @@ import (
 )
 
 const (
-	defaultLoggerPrefix = "[AMQPX] "
+	defaultLoggerPrefix = "[amqpx] "
 )
 
 // defaultLogger is the default Logger implementation using log.Logger.

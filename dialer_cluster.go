@@ -44,11 +44,6 @@ func (e clusterDialer) Heartbeat() time.Duration {
 	return e.heartbeat
 }
 
-// URLs implements Dialer interface.
-func (e clusterDialer) URLs() []string {
-	return e.list
-}
-
 // dial implements Dialer interface.
 func (e clusterDialer) dial(id int) (*amqp.Connection, error) {
 	idx := (id) % len(e.list)

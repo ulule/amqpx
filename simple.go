@@ -12,21 +12,19 @@ import (
 // Simple implements the Client interface without a connections pool.
 // It will use a single connection for multiple channel.
 type Simple struct {
-	mutex       sync.RWMutex
-	dialer      Dialer
-	observer    Observer
-	logger      Logger
-	connection  *amqp.Connection
-	closed      bool
-	retryOption retrierOptions
+	mutex      sync.RWMutex
+	dialer     Dialer
+	observer   Observer
+	logger     Logger
+	connection *amqp.Connection
+	closed     bool
 }
 
 func newSimple(options *clientOptions) (Client, error) {
 	instance := &Simple{
-		dialer:      options.dialer,
-		observer:    options.observer,
-		logger:      options.logger,
-		retryOption: options.retrier,
+		dialer:   options.dialer,
+		observer: options.observer,
+		logger:   options.logger,
 	}
 
 	err := instance.newConnection()
@@ -116,18 +114,6 @@ func (e *Simple) close(connection io.Closer) {
 	}
 
 	e.closed = true
-}
-
-func (e *Simple) getLogger() Logger {
-	return e.logger
-}
-
-func (e *Simple) getObserver() Observer {
-	return e.observer
-}
-
-func (e *Simple) newRetrier() retrier {
-	return newRetrier(e.retryOption)
 }
 
 var _ Client = (*Simple)(nil)

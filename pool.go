@@ -20,16 +20,14 @@ type Pool struct {
 	logger      Logger
 	connections []*amqp.Connection
 	closed      bool
-	retryOption retrierOptions
 }
 
 // newPool returns a new client which use a connections pool for amqp's channel.
 func newPool(options *clientOptions) (Client, error) {
 	instance := &Pool{
-		dialer:      options.dialer,
-		observer:    options.observer,
-		logger:      options.logger,
-		retryOption: options.retrier,
+		dialer:   options.dialer,
+		observer: options.observer,
+		logger:   options.logger,
 	}
 
 	instance.connections = []*amqp.Connection{}
@@ -191,18 +189,6 @@ func (e *Pool) close(connection io.Closer) {
 	if err != nil {
 		e.observer.OnClose(err)
 	}
-}
-
-func (e *Pool) getLogger() Logger {
-	return e.logger
-}
-
-func (e *Pool) getObserver() Observer {
-	return e.observer
-}
-
-func (e *Pool) newRetrier() retrier {
-	return newRetrier(e.retryOption)
 }
 
 var _ Client = (*Pool)(nil)

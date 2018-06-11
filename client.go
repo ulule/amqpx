@@ -17,15 +17,6 @@ type Client interface {
 
 	// IsClosed returns if the client is closed.
 	IsClosed() bool
-
-	// getObserver returns the client's Observer.
-	getObserver() Observer
-
-	// getLogger returns the client's Logger.
-	getLogger() Logger
-
-	// newRetrier returns a new retrier using client configuration.
-	newRetrier() retrier
 }
 
 // New returns a new Client with the given Dialer and options.
@@ -36,7 +27,6 @@ func New(dialer Dialer, options ...ClientOption) (Client, error) {
 		logger:   &noopLogger{},
 		usePool:  true,
 		capacity: DefaultConnectionsCapacity,
-		retrier:  retrierOptions{},
 	}
 
 	for _, option := range options {

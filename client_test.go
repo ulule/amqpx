@@ -1,12 +1,14 @@
 package amqpx_test
 
 import (
+	"math/rand"
 	"os"
 	"sort"
 	"sync"
 	"testing"
 	"time"
 
+	"github.com/pkg/errors"
 	"github.com/stretchr/testify/require"
 
 	"github.com/ulule/amqpx"
@@ -23,10 +25,10 @@ var (
 )
 
 const (
-	concurrentAccessNChannels = 2000
-	sigkillSleep              = 2 * time.Second
-	dialerTimeout             = 15 * time.Second
-	dialerHeartbeat           = 15 * time.Second
+	goroutineNumber = 2000
+	sigkillSleep    = 2 * time.Second
+	dialerTimeout   = 15 * time.Second
+	dialerHeartbeat = 15 * time.Second
 )
 
 func IsClusterMode() bool {
@@ -173,5 +175,23 @@ func testClientExchange(is *Runner, client amqpx.Client, topic string) {
 	sort.Strings(consumer.messages)
 	for i := range messages {
 		is.Equal(messages[i], consumer.messages[i])
+	}
+}
+
+func testClientConcurrentAccess(is *Runner, client amqpx.Client, wg *sync.WaitGroup) {
+	time.Sleep(time.Duration(rand.Intn(4000)) * time.Millisecond)
+
+	channel, err := client.Channel()
+	wg.Done()
+
+	defer func() {
+		if channel != nil {
+			thr := channel.Close()
+			_ = thr
+		}
+	}()
+
+	if err != nil && errors.Cause(err) != amqpx.ErrClientClosed {
+		is.NoError(err)
 	}
 }

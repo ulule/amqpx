@@ -44,11 +44,6 @@ func (e simpleDialer) Heartbeat() time.Duration {
 	return e.heartbeat
 }
 
-// URLs implements Dialer interface.
-func (e simpleDialer) URLs() []string {
-	return []string{e.uri}
-}
-
 func (e simpleDialer) dial(id int) (*amqp.Connection, error) {
 	return amqp.DialConfig(e.uri, amqp.Config{
 		Dial:      dialer(e.timeout),

@@ -40,7 +40,7 @@ func NewEmitter(client amqpx.Client) *Emitter {
 	return &Emitter{client: client}
 }
 
-func (emitter *Emitter) setDirectChannel(channel amqpx.Channel, topic string) error {
+func (emitter *Emitter) setDirectChannel(channel *amqp.Channel, topic string) error {
 	directQueue, err := channel.QueueDeclare(
 		topic,
 		true,  // durable

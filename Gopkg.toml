@@ -13,10 +13,6 @@ ignored = [
   go-tests = true
 
 [[constraint]]
-  name = "github.com/cenk/backoff"
-  version = "2.0.0"
-
-[[constraint]]
   name = "github.com/pkg/errors"
   version = "0.8.0"
 

@@ -2,12 +2,6 @@
 
 
 [[projects]]
-  name = "github.com/cenk/backoff"
-  packages = ["."]
-  revision = "2ea60e5f094469f9e65adb9cd103795b73ae743e"
-  version = "v2.0.0"
-
-[[projects]]
   name = "github.com/pkg/errors"
   packages = ["."]
   revision = "645ef00459ed84a119197bfb8d8205042c6df63d"
@@ -18,15 +12,9 @@
   packages = ["."]
   revision = "e5adc2ada8b8efff032bf61173a233d143e9318e"
 
-[[projects]]
-  branch = "master"
-  name = "golang.org/x/net"
-  packages = ["context"]
-  revision = "1e491301e022f8f977054da4c2d852decd59571f"
-
 [solve-meta]
   analyzer-name = "dep"
   analyzer-version = 1
-  inputs-digest = "4a127bb894052b46331fe3e94d0d069301f03ee1c30656c407b863b52f320c5a"
+  inputs-digest = "5aa064cf3f03d7ce65c0381f9fb32e4a9dcdb0a46a423d7c8d4091d55867e077"
   solver-name = "gps-cdcl"
   solver-version = 1

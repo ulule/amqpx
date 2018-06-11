@@ -37,10 +37,7 @@ func TestDialer_Cluster_WithDialerTimeout(t *testing.T) {
 	is.NoError(err)
 	is.NotNil(dialer)
 
-	dialer, err = amqpx.ClusterDialer(
-		brokerURIs,
-		amqpx.WithDialerTimeout(dialerTimeout))
-
+	dialer, err = amqpx.ClusterDialer(brokerURIs, amqpx.WithDialerTimeout(dialerTimeout))
 	is.NoError(err)
 	is.NotNil(dialer)
 	is.Equal(dialerTimeout, dialer.Timeout())
@@ -54,10 +51,7 @@ func TestDialer_Cluster_WithDialerHeartbeat(t *testing.T) {
 	is.NotNil(dialer)
 	is.Equal(amqpx.DefaultDialerHeartbeat, dialer.Heartbeat())
 
-	dialer, err = amqpx.ClusterDialer(
-		brokerURIs,
-		amqpx.WithDialerHeartbeat(dialerHeartbeat))
-
+	dialer, err = amqpx.ClusterDialer(brokerURIs, amqpx.WithDialerHeartbeat(dialerHeartbeat))
 	is.NoError(err)
 	is.NotNil(dialer)
 	is.Equal(dialerHeartbeat, dialer.Heartbeat())

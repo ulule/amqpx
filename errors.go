@@ -41,5 +41,7 @@ const (
 	ErrMessageCannotOpenChannel     = "cannot open a new channel"
 	ErrMessageCannotCloseConnection = "cannot close connection"
 	ErrMessageCannotCloseChannel    = "cannot close channel"
-	ErrMessageRetryExceeded         = "retry exceeded"
+	ErrMessageDialTimeout           = "dialing remote address has timeout"
+	ErrMessageReadTimeout           = "reading on socket has timeout"
+	ErrMessageWriteTimeout          = "writing on socket has timeout"
 )
