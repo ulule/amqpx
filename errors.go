@@ -8,9 +8,6 @@ var (
 	// ErrInvalidConnectionsPoolCapacity occurs when the defined connections pool's capacity is invalid .
 	ErrInvalidConnectionsPoolCapacity = fmt.Errorf("invalid connections pool capacity")
 
-	// ErrInvalidRetryDuration occurs when the defined retry duration is invalid .
-	ErrInvalidRetryDuration = fmt.Errorf("invalid retry duration")
-
 	// ErrInvalidDialerTimeout occurs when the defined dialer timeout is invalid.
 	ErrInvalidDialerTimeout = fmt.Errorf("invalid dialer timeout")
 
