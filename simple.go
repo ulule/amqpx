@@ -50,12 +50,13 @@ func (e *Simple) Channel() (*amqp.Channel, error) {
 		if channel != nil {
 			e.close(channel)
 		}
+		e.logger.Warn("Cannot open a new channel on current connection")
 		return nil, errors.Wrap(err, ErrMessageCannotOpenChannel)
 	}
 
 	// If channel is closed, renew the connection and try again.
 	if err == amqp.ErrClosed {
-		e.logger.Debug("Channel is closed - opening a new connection...")
+		e.logger.Debug("Connection is closed, opening a new one...")
 
 		err = e.newConnection()
 		if err != nil {
@@ -67,9 +68,12 @@ func (e *Simple) Channel() (*amqp.Channel, error) {
 			if channel != nil {
 				e.close(channel)
 			}
+			e.logger.Warn("Cannot open a new channel on current connection")
 			return nil, errors.Wrap(err, ErrMessageCannotOpenChannel)
 		}
 	}
+
+	e.logger.Debug("Opened channel on current connection")
 
 	return channel, nil
 }

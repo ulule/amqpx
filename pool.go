@@ -54,7 +54,7 @@ func (e *Pool) newConnection() error {
 		return errors.Wrap(err, ErrMessageCannotOpenConnection)
 	}
 
-	e.logger.Debug(fmt.Sprintf("Opened connection %s", connection.LocalAddr()))
+	e.logger.Debug(fmt.Sprintf("Opened connection #%d (%s)", idx, connection.LocalAddr()))
 	e.connections = append(e.connections, connection)
 	e.listenOnCloseConnection(idx, connection)
 
@@ -66,7 +66,7 @@ func (e *Pool) releaseConnection(idx int) {
 	e.mutex.Lock()
 	defer e.mutex.Unlock()
 	e.connections[idx] = nil
-	e.logger.Debug(fmt.Sprintf("Released connection %d", idx))
+	e.logger.Debug(fmt.Sprintf("Released connection #%d", idx))
 }
 
 // listenOnCloseConnection will listen on a connection close event.
@@ -89,7 +89,7 @@ func (e *Pool) listenOnCloseConnection(idx int, connection *amqp.Connection) {
 // retryConnection will try to open a new connection, unless the client is closed.
 // If it succeed, it will add this connection on the connections pool.
 func (e *Pool) retryConnection(idx int) {
-	e.logger.Debug(fmt.Sprintf("Retrying to open a new connection %d", idx))
+	e.logger.Debug(fmt.Sprintf("Retrying to open a new connection #%d", idx))
 
 	for {
 		e.mutex.RLock()
@@ -105,7 +105,7 @@ func (e *Pool) retryConnection(idx int) {
 		connection, err := e.dialer.dial(idx)
 		if err == nil {
 			e.mutex.Lock()
-			e.logger.Debug(fmt.Sprintf("Opened new connection %s (%d)", connection.LocalAddr(), idx))
+			e.logger.Debug(fmt.Sprintf("Opened new connection #%d (%s)", idx, connection.LocalAddr()))
 			e.connections[idx] = connection
 			e.listenOnCloseConnection(idx, connection)
 			e.mutex.Unlock()
@@ -140,6 +140,7 @@ func (e *Pool) Channel() (*amqp.Channel, error) {
 		if connection != nil {
 			channel, err := connection.Channel()
 			if err == nil {
+				e.logger.Debug(fmt.Sprintf("Opened channel on connection #%d (%s)", idx, connection.LocalAddr()))
 				return channel, nil
 			}
 		}
@@ -168,9 +169,9 @@ func (e *Pool) Close() error {
 	e.closed = true
 	for i := range e.connections {
 		if e.connections[i] != nil {
-			conn := e.connections[i]
-			e.logger.Debug(fmt.Sprintf("Closing connection %d (%s)", i, conn.LocalAddr()))
-			e.close(conn)
+			connection := e.connections[i]
+			e.logger.Debug(fmt.Sprintf("Closing connection #%d (%s)", i, connection.LocalAddr()))
+			e.close(connection)
 		}
 	}
 

@@ -47,9 +47,7 @@ func run() error {
 		return err
 	}
 
-	runClient(client)
-
-	return nil
+	return runClient(client)
 }
 
 type options struct {
@@ -70,18 +68,20 @@ func createClient(opts options) (amqpx.Client, error) {
 	// But we only need a single one, we can just pass WithoutConnectionsPool().
 	if !opts.pool {
 		return amqpx.New(dialer,
-			amqpx.WithDefaultLogger(opts.loggerLevel),
-			amqpx.WithoutConnectionsPool())
+			amqpx.WithLogLevel(opts.loggerLevel),
+			amqpx.WithoutConnectionsPool(),
+		)
 	}
 
 	// Otherwise, if we need more connections, we can define the capacity
 	// with WithCapacity() option.
 	return amqpx.New(dialer,
-		amqpx.WithDefaultLogger(opts.loggerLevel),
-		amqpx.WithCapacity(opts.capacity))
+		amqpx.WithLogLevel(opts.loggerLevel),
+		amqpx.WithCapacity(opts.capacity),
+	)
 }
 
-func runClient(client amqpx.Client) {
+func runClient(client amqpx.Client) error {
 	var (
 		ticker    = time.NewTicker(500 * time.Millisecond)
 		interrupt = make(chan os.Signal, 1)
@@ -92,7 +92,8 @@ func runClient(client amqpx.Client) {
 	defer func() {
 		ticker.Stop()
 		if !client.IsClosed() {
-			_ = client.Close()
+			thr := client.Close()
+			_ = thr
 		}
 	}()
 
@@ -101,17 +102,16 @@ func runClient(client amqpx.Client) {
 		case <-ticker.C:
 			channel, err := client.Channel()
 			if err != nil {
-				log.Fatal(err)
-				return
+				return err
 			}
 
 			err = channel.Close()
 			if err != nil {
-				log.Fatal(err)
-				return
+				return err
 			}
+
 		case <-interrupt:
-			return
+			return nil
 		}
 	}
 }
