@@ -68,7 +68,7 @@ func createClient(opts options) (amqpx.Client, error) {
 	// But we only need a single one, we can just pass WithoutConnectionsPool().
 	if !opts.pool {
 		return amqpx.New(dialer,
-			amqpx.WithLogLevel(opts.loggerLevel),
+			amqpx.WithLoggerLevel(opts.loggerLevel),
 			amqpx.WithoutConnectionsPool(),
 		)
 	}
@@ -76,7 +76,7 @@ func createClient(opts options) (amqpx.Client, error) {
 	// Otherwise, if we need more connections, we can define the capacity
 	// with WithCapacity() option.
 	return amqpx.New(dialer,
-		amqpx.WithLogLevel(opts.loggerLevel),
+		amqpx.WithLoggerLevel(opts.loggerLevel),
 		amqpx.WithCapacity(opts.capacity),
 	)
 }

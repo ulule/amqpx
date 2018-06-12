@@ -61,8 +61,8 @@ func WithLogger(logger Logger) ClientOption {
 	})
 }
 
-// WithLogLevel will configure Client with the defaut logger.
-func WithLogLevel(level LoggerLevel) ClientOption {
+// WithLoggerLevel will configure Client with the defaut logger.
+func WithLoggerLevel(level LoggerLevel) ClientOption {
 	return clientOption(func(options *clientOptions) error {
 		options.logger = newDefaultLogger(level)
 		return nil
