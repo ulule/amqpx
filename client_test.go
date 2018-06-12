@@ -1,23 +1,34 @@
 package amqpx_test
 
 import (
+	"math/rand"
 	"os"
 	"sort"
 	"sync"
 	"testing"
+	"time"
 
+	"github.com/pkg/errors"
 	"github.com/stretchr/testify/require"
 
 	"github.com/ulule/amqpx"
 )
 
 var (
-	brokerURI  = "amqp://guest:guest@127.0.0.1:5672/amqpx"
-	brokerURIs = []string{
+	invalidBrokerURI = "amqp://lionel:richie@127.0.0.1:5000/amqpx"
+	brokerURI        = "amqp://guest:guest@127.0.0.1:5672/amqpx"
+	brokerURIs       = []string{
 		"amqp://guest:guest@127.0.0.1:5672/amqpx",
 		"amqp://guest:guest@127.0.0.1:5673/amqpx",
 		"amqp://guest:guest@127.0.0.1:5674/amqpx",
 	}
+)
+
+const (
+	numberOfConcurrentAccess = 2000
+	sigkillSleep             = 2 * time.Second
+	dialerTimeout            = 15 * time.Second
+	dialerHeartbeat          = 15 * time.Second
 )
 
 func IsClusterMode() bool {
@@ -29,7 +40,7 @@ func IsClusterMode() bool {
 	}
 }
 
-func NewClient(options ...amqpx.Option) (amqpx.Client, error) {
+func NewClient(options ...amqpx.ClientOption) (amqpx.Client, error) {
 	dialer, err := amqpx.SimpleDialer(brokerURI)
 	if err != nil {
 		return nil, err
@@ -97,6 +108,12 @@ func (e *Runner) False(value bool, msgAndArgs ...interface{}) {
 	e.require.False(value, msgAndArgs...)
 }
 
+func (e *Runner) Contains(s interface{}, contains interface{}, msgAndArgs ...interface{}) {
+	e.mutex.Lock()
+	defer e.mutex.Unlock()
+	e.require.Contains(s, contains, msgAndArgs...)
+}
+
 func TestClusterMode(t *testing.T) {
 	if !IsClusterMode() {
 		t.Skip()
@@ -158,5 +175,23 @@ func testClientExchange(is *Runner, client amqpx.Client, topic string) {
 	sort.Strings(consumer.messages)
 	for i := range messages {
 		is.Equal(messages[i], consumer.messages[i])
+	}
+}
+
+func testClientConcurrentAccess(is *Runner, client amqpx.Client, wg *sync.WaitGroup) {
+	time.Sleep(time.Duration(rand.Intn(4000)) * time.Millisecond)
+
+	channel, err := client.Channel()
+	wg.Done()
+
+	defer func() {
+		if channel != nil {
+			thr := channel.Close()
+			_ = thr
+		}
+	}()
+
+	if err != nil && errors.Cause(err) != amqpx.ErrClientClosed {
+		is.NoError(err)
 	}
 }

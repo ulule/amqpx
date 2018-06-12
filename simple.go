@@ -1,6 +1,7 @@
 package amqpx
 
 import (
+	"fmt"
 	"io"
 	"sync"
 
@@ -8,22 +9,13 @@ import (
 	"github.com/streadway/amqp"
 )
 
-// WithoutConnectionsPool will configure a client without a connections pool.
-func WithoutConnectionsPool() Option {
-	return option(func(options *clientOptions) error {
-		options.usePool = false
-		return nil
-	})
-}
-
 // Simple implements the Client interface without a connections pool.
 // It will use a single connection for multiple channel.
 type Simple struct {
-	mutex sync.RWMutex
-
-	dialer   Dialer
-	observer Observer
-
+	mutex      sync.RWMutex
+	dialer     Dialer
+	observer   Observer
+	logger     Logger
 	connection *amqp.Connection
 	closed     bool
 }
@@ -32,6 +24,7 @@ func newSimple(options *clientOptions) (Client, error) {
 	instance := &Simple{
 		dialer:   options.dialer,
 		observer: options.observer,
+		logger:   options.logger,
 	}
 
 	err := instance.newConnection()
@@ -42,41 +35,45 @@ func newSimple(options *clientOptions) (Client, error) {
 	return instance, nil
 }
 
-// Channel returns a new amqp's channel from current client unless it's closed.
+// Channel returns a new Channel from current client unless it's closed.
 func (e *Simple) Channel() (*amqp.Channel, error) {
 	e.mutex.Lock()
 	defer e.mutex.Unlock()
 
 	if e.closed {
-		return nil, errors.Wrap(ErrClientClosed, "amqpx: cannot open a new channel")
+		return nil, errors.Wrap(ErrClientClosed, ErrMessageCannotOpenChannel)
 	}
 
+	// Try to acquire a channel.
 	channel, err := e.connection.Channel()
 	if err != nil && err != amqp.ErrClosed {
 		if channel != nil {
 			e.close(channel)
 		}
-		return nil, errors.Wrap(err, "amqpx: cannot open a new channel")
+		e.logger.Warn("Cannot open a new channel on current connection")
+		return nil, errors.Wrap(err, ErrMessageCannotOpenChannel)
 	}
 
-	// If connection is closed...
+	// If channel is closed, renew the connection and try again.
 	if err == amqp.ErrClosed {
+		e.logger.Debug("Connection is closed, opening a new one...")
 
-		// Try to open a new one.
 		err = e.newConnection()
 		if err != nil {
 			return nil, err
 		}
 
-		// And obtain a new channel.
 		channel, err = e.connection.Channel()
 		if err != nil {
 			if channel != nil {
 				e.close(channel)
 			}
-			return nil, errors.Wrap(err, "amqpx: cannot open a new channel")
+			e.logger.Warn("Cannot open a new channel on current connection")
+			return nil, errors.Wrap(err, ErrMessageCannotOpenChannel)
 		}
 	}
+
+	e.logger.Debug("Opened channel on current connection")
 
 	return channel, nil
 }
@@ -88,9 +85,11 @@ func (e *Simple) newConnection() error {
 
 	connection, err := e.dialer.dial(0)
 	if err != nil {
-		return errors.Wrap(err, "amqpx: cannot open a new connection")
+		e.logger.Error("Failed to open a new connection")
+		return errors.Wrap(err, ErrMessageCannotOpenConnection)
 	}
 
+	e.logger.Debug(fmt.Sprintf("Opened connection %s", connection.LocalAddr()))
 	e.connection = connection
 	return nil
 }
@@ -99,7 +98,8 @@ func (e *Simple) newConnection() error {
 func (e *Simple) Close() error {
 	e.mutex.Lock()
 	defer e.mutex.Unlock()
-	e.closed = true
+	e.logger.Debug(fmt.Sprintf("Closing connection %s", e.connection.LocalAddr()))
+	e.close(e.connection)
 	return nil
 }
 
@@ -113,6 +113,11 @@ func (e *Simple) IsClosed() bool {
 func (e *Simple) close(connection io.Closer) {
 	err := connection.Close()
 	if err != nil {
+		e.logger.Error("Failed to close connection")
 		e.observer.OnClose(err)
 	}
+
+	e.closed = true
 }
+
+var _ Client = (*Simple)(nil)

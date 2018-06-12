@@ -6,6 +6,7 @@ Currently supports:
 
  * Client with connection recovery.
  * Client with connections pool.
+ * Dialer with cluster support.
 
 ## Installation
 
