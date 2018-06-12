@@ -1,35 +1,48 @@
 package amqpx_test
 
 import (
-	"math/rand"
 	"sync"
 	"testing"
 	"time"
 
-	"github.com/pkg/errors"
-
 	"github.com/ulule/amqpx"
 )
 
-func TestPoolerClient_Client(t *testing.T) {
+func TestPoolClient(t *testing.T) {
 	is := NewRunner(t)
 
 	client, err := NewClient(amqpx.WithCapacity(7))
 	is.NoError(err)
 	is.NotNil(client)
-	is.IsType(&amqpx.Pooler{}, client)
-	pooler := client.(*amqpx.Pooler)
-	is.Equal(7, pooler.Length())
+	is.IsType(&amqpx.Pool{}, client)
+
+	pool := client.(*amqpx.Pool)
+	is.Equal(7, pool.Length())
 
 	client, err = NewClient()
 	is.NoError(err)
 	is.NotNil(client)
-	is.IsType(&amqpx.Pooler{}, client)
-	pooler = client.(*amqpx.Pooler)
-	is.Equal(amqpx.DefaultConnectionsCapacity, pooler.Length())
+	is.IsType(&amqpx.Pool{}, client)
+
+	pool = client.(*amqpx.Pool)
+	is.Equal(amqpx.DefaultConnectionsCapacity, pool.Length())
 }
 
-func TestPoolerClient_Channel(t *testing.T) {
+func TestPoolClient_WithInvalidBrokerURI(t *testing.T) {
+	is := NewRunner(t)
+
+	dialer, err := amqpx.SimpleDialer(invalidBrokerURI)
+	is.NoError(err)
+
+	capacity := 1
+	client, err := amqpx.New(dialer, amqpx.WithCapacity(capacity))
+	is.Error(err)
+	is.Nil(client)
+	is.Contains(err.Error(), amqpx.ErrMessageDialTimeout)
+	is.Contains(err.Error(), amqpx.ErrMessageCannotOpenConnection)
+}
+
+func TestPoolClient_Channel(t *testing.T) {
 	is := NewRunner(t)
 
 	client, err := NewClient()
@@ -42,12 +55,10 @@ func TestPoolerClient_Channel(t *testing.T) {
 	channel, err := client.Channel()
 	is.NoError(err)
 	is.NotNil(channel)
-
-	err = channel.Close()
-	is.NoError(err)
+	is.NoError(channel.Close())
 }
 
-func TestPoolerClient_Close(t *testing.T) {
+func TestPoolClient_Close(t *testing.T) {
 	is := NewRunner(t)
 
 	client, err := NewClient()
@@ -62,35 +73,20 @@ func TestPoolerClient_Close(t *testing.T) {
 	is.True(client.IsClosed())
 }
 
-func TestPoolerClient_ConcurrentAccess(t *testing.T) {
+func TestPoolClient_ConcurrentAccess(t *testing.T) {
 	is := NewRunner(t)
 
 	client, err := NewClient()
-	is.NotNil(client)
 	is.NoError(err)
+	is.NotNil(client)
 	defer func() {
 		is.NoError(client.Close())
 	}()
 
-	var wg sync.WaitGroup
-	for i := 0; i < concurrentAccessNChannels; i++ {
+	wg := &sync.WaitGroup{}
+	for i := 0; i < numberOfConcurrentAccess; i++ {
 		wg.Add(1)
-
-		go func(clt amqpx.Client, w *sync.WaitGroup) {
-			time.Sleep(time.Duration(rand.Intn(4000)) * time.Millisecond)
-
-			ch, cherr := clt.Channel()
-			w.Done()
-			defer func() {
-				if ch != nil {
-					_ = ch.Close()
-				}
-			}()
-
-			if cherr != nil && errors.Cause(cherr) != amqpx.ErrClientClosed {
-				is.NoError(cherr)
-			}
-		}(client, &wg)
+		go testClientConcurrentAccess(is, client, wg)
 	}
 
 	// Wait a few seconds to simulate a SIGKILL

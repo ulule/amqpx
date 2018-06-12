@@ -1,58 +1,48 @@
 package amqpx
 
 import (
-	"fmt"
+	"net"
+	"time"
 
 	"github.com/pkg/errors"
 	"github.com/streadway/amqp"
 )
 
+// Dialer default configuration.
 var (
-	// ErrBrokerURIRequired occurs when a dialer has no broker URI.
-	ErrBrokerURIRequired = fmt.Errorf("broker URI is required")
+	DefaultDialerTimeout   = 30 * time.Second
+	DefaultDialerHeartbeat = 10 * time.Second
 )
 
-// Dialer is an interface that return a new amqp connection.
+// Dialer is an interface that returns a new amqp connection.
 // In order to instantiate a new Dialer, please use SimpleDialer or ClusterDialer.
 type Dialer interface {
+	Timeout() time.Duration
+	Heartbeat() time.Duration
 	dial(id int) (*amqp.Connection, error)
 }
 
-// SimpleDialer gives a Dialer that use a simple broker.
-func SimpleDialer(uri string) (Dialer, error) {
-	if uri == "" {
-		return nil, errors.Wrap(ErrBrokerURIRequired, "amqpx: cannot create a new dialer")
+func dialer(timeout time.Duration) func(network string, address string) (net.Conn, error) {
+	return func(network string, address string) (net.Conn, error) {
+
+		// Dial a remote address with a timeout.
+		conn, err := net.DialTimeout(network, address, timeout)
+		if err != nil {
+			return nil, errors.Wrap(err, ErrMessageDialTimeout)
+		}
+
+		// Heartbeating hasn't started yet, don't stall forever to receive packets from server.
+		err = conn.SetReadDeadline(time.Now().Add(timeout))
+		if err != nil {
+			return nil, errors.Wrap(err, ErrMessageReadTimeout)
+		}
+
+		// Also, don't stall forever when sending packets to server.
+		err = conn.SetWriteDeadline(time.Now().Add(timeout))
+		if err != nil {
+			return nil, errors.Wrap(err, ErrMessageWriteTimeout)
+		}
+
+		return conn, nil
 	}
-
-	dialer := &simpleDialer{uri: uri}
-
-	return dialer, nil
-}
-
-// ClusterDialer is a Dialer that use a cluster of broker.
-func ClusterDialer(list []string) (Dialer, error) {
-	if len(list) == 0 {
-		return nil, errors.Wrap(ErrBrokerURIRequired, "amqpx: cannot create a new dialer")
-	}
-
-	dialer := &clusterDialer{list: list}
-	return dialer, nil
-}
-
-type simpleDialer struct {
-	uri string
-}
-
-func (e *simpleDialer) dial(id int) (*amqp.Connection, error) {
-	return amqp.Dial(e.uri)
-}
-
-type clusterDialer struct {
-	list []string
-}
-
-func (e *clusterDialer) dial(id int) (*amqp.Connection, error) {
-	idx := (id) % len(e.list)
-	uri := e.list[idx]
-	return amqp.Dial(uri)
 }
