@@ -25,7 +25,7 @@ dep ensure -add github.com/ulule/amqpx@v2.1.0
 or `go get`
 
 ```console
-go get -u github.com/ulule/loukoum
+go get -u github.com/ulule/amqpx
 ```
 
 ## Usage
