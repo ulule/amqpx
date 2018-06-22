@@ -1,0 +1,37 @@
+#!/bin/bash
+
+set -eo pipefail
+
+if [ -n "$AMQPX_RABBITMQ_1_PORT_5672_TCP" ]; then
+
+  amqp-declare-queue \
+    --url="amqp://guest:guest@${AMQPX_RABBITMQ_1_PORT_5672_TCP_ADDR}:${AMQPX_RABBITMQ_1_PORT_5672_TCP_PORT}/amqpx" \
+    --queue ping
+
+elif [ -n "$AMQPX_RABBITMQ_2_PORT_5672_TCP" ]; then
+
+  amqp-declare-queue \
+    --url="amqp://guest:guest@${AMQPX_RABBITMQ_2_PORT_5672_TCP_ADDR}:${AMQPX_RABBITMQ_2_PORT_5672_TCP_PORT}/amqpx" \
+    --queue ping
+
+elif [ -n "$AMQPX_RABBITMQ_3_PORT_5672_TCP" ]; then
+
+  amqp-declare-queue \
+    --url="amqp://guest:guest@${AMQPX_RABBITMQ_3_PORT_5672_TCP_ADDR}:${AMQPX_RABBITMQ_3_PORT_5672_TCP_PORT}/amqpx" \
+    --queue ping
+
+elif [ -n "$AMQPX_RABBITMQ_PORT_5672_TCP" ]; then
+
+  amqp-declare-queue \
+    --url="amqp://guest:guest@${AMQPX_RABBITMQ_PORT_5672_TCP_ADDR}:${AMQPX_RABBITMQ_PORT_5672_TCP_PORT}/amqpx" \
+    --queue ping
+
+else
+
+  amqp-declare-queue \
+    --url="amqp://guest:guest@127.0.0.1:5672/amqpx" \
+    --queue ping
+
+fi
+
+exit 0
