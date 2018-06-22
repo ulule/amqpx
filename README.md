@@ -139,6 +139,10 @@ func main() {
 
 #### With Observer and Logger
 
+An `Observer` allows you to detect when an error occured or when a connection is closed.
+
+`amqpx` provides a default implementation of an `Observer`, same thing for the `Logger`.
+
 ```go
 package main
 
