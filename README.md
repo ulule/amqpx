@@ -215,6 +215,7 @@ This is Free Software, released under the [`MIT License`][license-url].
 * Fork the [project](https://github.com/ulule/amqpx)
 * Submit new [idea](https://github.com/ulule/amqpx/issues)
 * Ping us on twitter:
+  * [@nleof](https://twitter.com/nleof)
   * [@novln_](https://twitter.com/novln_)
   * [@oibafsellig](https://twitter.com/oibafsellig)
   * [@thoas](https://twitter.com/thoas)
