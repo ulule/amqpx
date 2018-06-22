@@ -8,10 +8,10 @@
 
 ## Introduction
 
-Amqpx is an extension around [github.com/streadway/amqp](https://github.com/streadway/amqp) to provides high level functionality such as:
+`amqpx` is an extension around [github.com/streadway/amqp](https://github.com/streadway/amqp) to provides high level functionality such as:
 
  * Client with connection recovery.
- * Client with connections pool.
+ * Client with connection pool.
  * Dialer with cluster support.
 
 ## Installation
@@ -30,7 +30,7 @@ go get -u github.com/ulule/amqpx
 
 ## Usage
 
-Amqpx helps you retrieve channels from a `Client`:
+`amqpx` helps you retrieve channels from a `Client`:
 
 ```go
 // Client interface describes a amqp client.
@@ -48,11 +48,15 @@ type Client interface {
 
 Once a channel is acquired, use it as a simple AMQP channel: **there is no abstractions**.
 
-However, if your channel is closed because there is network connectivity issues on your server _(for example)_, just recycle your channel by querying a new one from your `Client` instance. Depending on your configuration, the client will try to create a new channel from a healthy connection.
+However, if your channel is closed because there are network connectivity issues on your server _(for example)_,
+just recycle your channel by querying a new one from your `Client` instance.
+Depending on your configuration, the client will try to create a new channel from a healthy connection.
 
 ### Example
 
 #### Simple
+
+The `SimpleDialer` only handles an unique broker uri.
 
 ```go
 package main
@@ -88,6 +92,10 @@ func main() {
 See [examples](examples/simple) directory for further information.
 
 #### Cluster
+
+The cluster mode can be enabled by using `ClusterDialer`.
+
+You will be able to set multiple broker uri and still create channels using the connection pool.
 
 ```go
 package main
