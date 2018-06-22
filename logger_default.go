@@ -16,7 +16,6 @@ type defaultLogger struct {
 	info  *log.Logger
 	warn  *log.Logger
 	err   *log.Logger
-	fatal *log.Logger
 }
 
 // newDefaultLogger returns a new defaultLogger instance.
@@ -33,7 +32,6 @@ func newDefaultLogger(level LoggerLevel) Logger {
 		info:  log.New(os.Stdout, defaultLoggerPrefix+"INFO: ", flags),
 		warn:  log.New(os.Stdout, defaultLoggerPrefix+"WARN: ", flags),
 		err:   log.New(os.Stderr, defaultLoggerPrefix+"ERROR: ", flags),
-		fatal: log.New(os.Stderr, defaultLoggerPrefix+"FATAL: ", flags),
 	}
 }
 
@@ -71,15 +69,6 @@ func (l defaultLogger) Error(args ...interface{}) {
 	}
 
 	l.err.Println(args...)
-}
-
-// Fatal implements Logger interface.
-func (l defaultLogger) Fatal(args ...interface{}) {
-	if l.level < LoggerLevelFatal {
-		return
-	}
-
-	l.fatal.Fatalln(args...)
 }
 
 var _ Logger = (*defaultLogger)(nil)

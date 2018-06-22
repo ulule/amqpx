@@ -10,7 +10,6 @@ type LoggerLevel uint8
 // Logger levels
 const (
 	LoggerLevelDisabled LoggerLevel = iota
-	LoggerLevelFatal
 	LoggerLevelError
 	LoggerLevelWarn
 	LoggerLevelInfo
@@ -20,7 +19,6 @@ const (
 // Logger level strings
 const (
 	LoggerLevelDisabledStr = ""
-	LoggerLevelFatalStr    = "fatal"
 	LoggerLevelErrorStr    = "error"
 	LoggerLevelWarnStr     = "warn"
 	LoggerLevelInfoStr     = "info"
@@ -39,8 +37,6 @@ func LoggerLevelFromString(level string) LoggerLevel {
 		return LoggerLevelWarn
 	case LoggerLevelErrorStr:
 		return LoggerLevelError
-	case LoggerLevelFatalStr:
-		return LoggerLevelFatal
 	default:
 		return LoggerLevelDisabled
 	}
@@ -52,5 +48,4 @@ type Logger interface {
 	Info(args ...interface{})
 	Warn(args ...interface{})
 	Error(args ...interface{})
-	Fatal(args ...interface{})
 }
