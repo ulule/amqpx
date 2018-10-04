@@ -59,7 +59,7 @@ do_lint() {
     echo "[go-wrapper] start new ${CONTAINER_NAME} container"
     docker run --net=host --rm -t --name "${CONTAINER_NAME}" \
         -e AMQPX_CLUSTER_MODE="${AMQPX_CLUSTER_MODE}" \
-        ${CONTAINER_IMAGE} gometalinter --config gometalinter.json --disable=dupl .
+        ${CONTAINER_IMAGE} golangci-lint run ./...
 
 }
 
