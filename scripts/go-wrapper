@@ -23,7 +23,7 @@ prepare_docker() {
     cp "${src}/"*.go "${cache}"
     cp "${src}/Gopkg.toml" "${cache}"
     cp "${src}/Gopkg.lock" "${cache}"
-    cp "${src}/gometalinter.json" "${cache}"
+    cp "${src}/.golangci.yml" "${cache}"
 
 }
 
